@@ -10,8 +10,8 @@ router.get('/', (req, res) => {
 router.get('/dashboard', (req, res) => {
   // All data is now defined here. The EJS template will assume every field exists.
   const userData = {
-    name: 'Alex Turner',
-    email: 'alex.turner@example.com',
+    name: 'Hamza Crypto',
+    email: 'hamza@example.com',
     userId: 'FCTZ-A8X4K2',
     verificationStatus: 'Verified', // Can be 'Verified', 'Unverified', 'Pending'
     accountBalance: 54329,
