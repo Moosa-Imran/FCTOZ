@@ -1,0 +1,55 @@
+<aside
+  class="fixed top-0 left-0 h-full w-64 bg-white dark:bg-slate-900/60 backdrop-blur-lg border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-in-out z-40 md:translate-x-0 -translate-x-full">
+  <div class="flex items-center justify-between h-20 border-b border-slate-200 dark:border-slate-800 px-6">
+    <div class="flex items-center">
+      <i data-lucide="candlestick-chart" class="h-8 w-8 text-gold-500"></i>
+      <h1 class="ml-3 text-2xl font-bold">FCTOZ</h1>
+    </div>
+    <button id="sidebar-close-button" class="md:hidden text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white">
+        <i data-lucide="x" class="h-6 w-6"></i>
+    </button>
+  </div>
+  <nav id="main-nav" class="p-4 space-y-2">
+    <a href="/dashboard" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg nav-link">
+      <i data-lucide="layout-dashboard" class="h-5 w-5 mr-3"></i> Overview
+    </a>
+    <a href="/challenges" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg nav-link">
+      <i data-lucide="target" class="h-5 w-5 mr-3"></i> My Challenges
+    </a>
+    <a href="/reports" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg nav-link">
+      <i data-lucide="file-text" class="h-5 w-5 mr-3"></i> P&L Reports
+    </a>
+    <a href="/payouts" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg nav-link">
+      <i data-lucide="wallet-cards" class="h-5 w-5 mr-3"></i> Payouts
+    </a>
+    <a href="/leaderboard" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg nav-link">
+      <i data-lucide="trophy" class="h-5 w-5 mr-3"></i> Leaderboard
+    </a>
+     <a href="/academy" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg nav-link">
+      <i data-lucide="book-open" class="h-5 w-5 mr-3"></i> FCTOZ Academy
+    </a>
+    <a href="/tickets" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg nav-link">
+      <i data-lucide="message-square" class="h-5 w-5 mr-3"></i> Support Tickets
+    </a>
+    <a href="/settings" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-lg nav-link">
+      <i data-lucide="settings" class="h-5 w-5 mr-3"></i> Account Settings
+    </a>
+  </nav>
+  <div class="absolute bottom-0 w-full p-4 border-t border-slate-200 dark:border-slate-800">
+    <!-- ... user profile section ... -->
+  </div>
+</aside>
+
+<script>
+// Small script to set the active nav link
+document.addEventListener('DOMContentLoaded', function() {
+    const navLinks = document.querySelectorAll('#main-nav .nav-link');
+    const currentPath = window.location.pathname;
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('bg-gold-50', 'dark:bg-gold-500/10', 'text-gold-600', 'dark:text-gold-300', 'active-nav-glow');
+            link.classList.remove('text-slate-600', 'dark:text-slate-400');
+        }
+    });
+});
+</script>

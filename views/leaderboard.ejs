@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <%- include('partials/head') %>
+    <link href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/css/flag-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200">
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 md:hidden hidden"></div>
+    <div class="flex min-h-screen">
+        <%- include('partials/sidebar') %>
+        <div class="flex-1 md:ml-64">
+            <%- include('partials/header') %>
+            <main class="pt-24 px-4 sm:px-6 lg:px-8 pb-8">
+                <!-- Header -->
+                <div>
+                    <h1 class="text-3xl font-bold">Top Traders Leaderboard</h1>
+                    <p class="mt-1 text-slate-500 dark:text-slate-400">See who's leading the pack with the highest payouts.</p>
+                </div>
+
+                <!-- Leaderboard Table -->
+                <div class="mt-8">
+                    <div class="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="px-6 py-4 font-medium text-center">Rank</th>
+                                        <th class="px-6 py-4 font-medium">Trader</th>
+                                        <th class="px-6 py-4 font-medium text-right">Total Payout</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% leaders.forEach(leader => { %>
+                                        <tr class="border-b border-slate-200 dark:border-slate-800 <%= leader.name === 'Hamza Crypto' ? 'bg-gold-50 dark:bg-gold-500/10' : '' %>">
+                                            <td class="px-6 py-4 text-center">
+                                                <span class="font-bold text-lg <%= leader.rank <= 3 ? 'text-gold-500' : '' %>">
+                                                    <%= leader.rank %>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex items-center">
+                                                    <span class="fi fi-<%= leader.country.toLowerCase() %> text-2xl rounded mr-4"></span>
+                                                    <div>
+                                                        <p class="font-semibold text-base"><%= leader.name %></p>
+                                                        <% if(leader.name === 'Hamza Crypto') { %>
+                                                            <p class="text-xs text-gold-600 dark:text-gold-400">This is you</p>
+                                                        <% } %>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <p class="font-bold text-lg text-green-500">$<%= leader.payout.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></p>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script>
+        // Initialize Lucide Icons, Theme Toggler, Mobile Sidebar scripts
+        lucide.createIcons();
+        // ... (full script block as in other pages) ...
+    </script>
+</body>
+</html>
