@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Route for the landing page
 router.get('/', (req, res) => {
-  res.render('pages/landing', { title: 'FCTOZ - Funding Crypto Organization' });
+  res.render('landing', { title: 'FCTOZ - Funding Crypto Organization' });
 });
 
 // Route for the dashboard page
