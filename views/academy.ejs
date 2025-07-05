@@ -2,138 +2,159 @@
 <html lang="en" class="light">
 <head>
     <%- include('partials/head') %>
+    <style>
+        .category-icon {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.5rem;
+        }
+        .video-card {
+            min-width: 300px;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200">
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 md:hidden hidden"></div>
     <div class="flex min-h-screen">
-        <%- include('partials/sidebar') %>
-        <div class="flex-1 md:ml-64">
-            <%- include('partials/header') %>
+        <%- include('partials/sidebar.ejs') %>
+        <div class="flex-1 md:ml-64 min-w-0">
+            <%- include('partials/header.ejs') %>
             <main class="pt-24 px-4 sm:px-6 lg:px-8 pb-8">
                 <!-- Header -->
-                <div>
-                    <h1 class="text-3xl font-bold">FCTOZ Academy</h1>
-                    <p class="mt-1 text-slate-500 dark:text-slate-400">Sharpen your trading knowledge and skills.</p>
+                <div class="text-center">
+                    <h1 class="text-3xl sm:text-4xl font-bold text-gold-500">FCTOZ Academy</h1>
+                    <p class="mt-2 max-w-2xl mx-auto text-slate-500 dark:text-slate-400">Your one-stop destination to master the art and science of trading. From fundamentals to advanced strategies, we've got you covered.</p>
                 </div>
 
-                <!-- Categories -->
-                <div class="mt-8">
-                    <div class="flex items-center space-x-2 overflow-x-auto pb-2">
-                        <button class="px-4 py-2 text-sm font-semibold text-white bg-gold-600 rounded-full flex-shrink-0">All</button>
-                        <% academy.categories.forEach(category => { %>
-                            <button class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full flex-shrink-0"><%= category %></button>
+                <!-- Search Bar -->
+                <div class="mt-8 max-w-xl mx-auto">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"></i>
+                        <input type="text" placeholder="Search articles, videos, or topics..." class="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-slate-700 rounded-full focus:border-gold-500 focus:ring-gold-500 search-glow">
+                    </div>
+                </div>
+
+                <!-- Featured Article -->
+                <div class="mt-12">
+                    <h2 class="text-2xl font-bold mb-4">Featured Article</h2>
+                    <div class="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow overflow-hidden md:flex">
+                        <div class="md:w-1/2 lg:w-3/5">
+                            <img src="<%= academy.featuredArticle.imageUrl %>" alt="Featured article thumbnail" class="h-full w-full object-cover">
+                        </div>
+                        <div class="p-6 md:p-8 md:w-1/2 lg:w-2/5 flex flex-col">
+                            <p class="text-sm font-medium text-gold-600 dark:text-gold-400"><%= academy.featuredArticle.category %></p>
+                            <h3 class="mt-2 text-xl font-bold"><%= academy.featuredArticle.title %></h3>
+                            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 flex-grow"><%= academy.featuredArticle.excerpt %></p>
+                            <div class="mt-6 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                                <span>By <%= academy.featuredArticle.author %> on <%= academy.featuredArticle.date %></span>
+                                <span><%= academy.featuredArticle.readTime %></span>
+                            </div>
+                            <button class="mt-6 w-full px-5 py-3 font-semibold text-white bg-gold-600 hover:bg-gold-700 rounded-lg button-glow">Read Full Article</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Learning Paths -->
+                <div class="mt-12">
+                    <h2 class="text-2xl font-bold mb-4">Learning Paths</h2>
+                    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <% academy.learningPaths.forEach(path => { %>
+                            <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow flex flex-col">
+                                <div class="flex items-center">
+                                    <div class="p-2 bg-<%= path.color %>-100 dark:bg-<%= path.color %>-500/10 rounded-lg mr-4">
+                                        <i data-lucide="<%= path.icon %>" class="h-6 w-6 text-<%= path.color %>-500"></i>
+                                    </div>
+                                    <h3 class="text-lg font-bold"><%= path.title %></h3>
+                                </div>
+                                <p class="mt-3 text-sm text-slate-600 dark:text-slate-400 flex-grow"><%= path.description %></p>
+                                <div class="mt-4 flex justify-between items-center">
+                                    <span class="text-xs font-medium text-slate-500"><%= path.articleCount %> Articles</span>
+                                    <button class="text-sm font-semibold text-gold-600 hover:text-gold-500">Start Learning <i data-lucide="arrow-right" class="inline h-4 w-4"></i></button>
+                                </div>
+                            </div>
                         <% }); %>
                     </div>
                 </div>
 
-                <!-- Articles Grid -->
-                <div class="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                    <% academy.articles.forEach(article => { %>
-                        <div class="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow overflow-hidden flex flex-col">
-                            <img src="<%= article.imageUrl %>" alt="Article thumbnail" class="h-48 w-full object-cover">
-                            <div class="p-6 flex flex-col flex-grow">
-                                <p class="text-sm font-medium text-gold-600 dark:text-gold-400"><%= article.category %></p>
-                                <h3 class="mt-2 text-lg font-bold flex-grow"><%= article.title %></h3>
-                                <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                                    <span>By <%= article.author %> on <%= article.date %></span>
-                                    <span><%= article.readTime %></span>
+                <!-- Latest Articles -->
+                <div class="mt-12">
+                    <h2 class="text-2xl font-bold mb-4">Latest Articles</h2>
+                    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                        <% academy.articles.forEach(article => { %>
+                            <div class="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow overflow-hidden flex flex-col">
+                                <img src="<%= article.imageUrl %>" alt="Article thumbnail" class="h-48 w-full object-cover">
+                                <div class="p-6 flex flex-col flex-grow">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-sm font-medium text-gold-600 dark:text-gold-400 flex items-center"><i data-lucide="<%= article.icon %>" class="category-icon"></i><%= article.category %></p>
+                                        <span class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-500/20 rounded-full"><%= article.difficulty %></span>
+                                    </div>
+                                    <h3 class="mt-3 text-lg font-bold flex-grow"><%= article.title %></h3>
+                                    <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                                        <span>By <%= article.author %></span>
+                                        <span><%= article.readTime %></span>
+                                    </div>
+                                    <button class="mt-5 w-full text-sm py-2 font-semibold text-gold-600 dark:text-gold-500 bg-gold-500/10 hover:bg-gold-500/20 rounded-lg">Read Now</button>
                                 </div>
                             </div>
-                        </div>
-                    <% }); %>
+                        <% }); %>
+                    </div>
                 </div>
+
+                <!-- Video Tutorials -->
+                <div class="mt-12">
+                    <h2 class="text-2xl font-bold mb-4">Video Tutorials</h2>
+                    <div class="flex space-x-6 overflow-x-auto pb-4 -mx-4 px-4">
+                        <% academy.videos.forEach(video => { %>
+                            <div class="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow overflow-hidden flex-shrink-0 video-card">
+                                <div class="relative">
+                                    <img src="<%= video.thumbnail %>" alt="Video thumbnail" class="w-full h-auto object-cover">
+                                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                        <button class="p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/40">
+                                            <i data-lucide="play" class="h-8 w-8 fill-current"></i>
+                                        </button>
+                                    </div>
+                                    <span class="absolute bottom-2 right-2 px-2 py-1 text-xs font-medium text-white bg-black/50 rounded"><%= video.duration %></span>
+                                </div>
+                                <div class="p-4">
+                                    <h4 class="font-semibold"><%= video.title %></h4>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
-  <script>
+<script>
     // Initialize Lucide Icons
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 
     // --- Theme Toggler ---
     const themeToggle = document.getElementById('theme-toggle');
-    const htmlEl = document.documentElement;
-    themeToggle.addEventListener('click', () => {
-      htmlEl.classList.toggle('dark');
-      localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
-      renderChart(); // Re-render chart with new theme colors
-    });
+    if (themeToggle) {
+        const htmlEl = document.documentElement;
+        themeToggle.addEventListener('click', () => {
+            htmlEl.classList.toggle('dark');
+            localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
+        });
+    }
 
     // --- Mobile Sidebar ---
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const sidebar = document.querySelector('aside');
     const sidebarCloseButton = document.getElementById('sidebar-close-button');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
-    const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
-    mobileMenuButton.addEventListener('click', openSidebar);
-    sidebarCloseButton.addEventListener('click', closeSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
-
-    // --- Chart.js Implementation ---
-    let accountGrowthChart;
-    const renderChart = () => {
-      setTimeout(() => {
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        const labelColor = isDarkMode ? '#cbd5e1' : '#475569';
-        const goldColor = '#eab308';
-        const goldColorDark = '#facc15';
-        const tooltipBgColor = isDarkMode ? '#0f172a' : '#fff';
-        const tooltipBorderColor = isDarkMode ? '#334155' : '#e2e8f0';
-
-        const ctx = document.getElementById('accountGrowthChart').getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, isDarkMode ? 'rgba(250, 204, 21, 0.4)' : 'rgba(234, 179, 8, 0.7)');
-        gradient.addColorStop(1, isDarkMode ? 'rgba(250, 204, 21, 0)' : 'rgba(234, 179, 8, 0.1)');
-
-        const chartData = {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-          datasets: [{
-            label: 'Account Value',
-            data: [45000, 48000, 47000, 51000, 55000, 53000, 54329],
-            borderColor: isDarkMode ? goldColorDark : goldColor,
-            backgroundColor: gradient,
-            fill: true, tension: 0.4,
-            pointBackgroundColor: isDarkMode ? goldColorDark : goldColor,
-            pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: isDarkMode ? goldColorDark : goldColor,
-            pointRadius: 4, pointHoverRadius: 6,
-          }]
-        };
-
-        const chartOptions = {
-          responsive: true, maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: false, grid: { color: gridColor, drawBorder: false }, ticks: { color: labelColor, callback: (value) => '$' + value / 1000 + 'k' } },
-            x: { grid: { display: false }, ticks: { color: labelColor } }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: tooltipBgColor, titleColor: isDarkMode ? '#e2e8f0' : '#334155',
-              bodyColor: isDarkMode ? '#cbd5e1' : '#475569', borderColor: tooltipBorderColor,
-              borderWidth: 1, padding: 12, displayColors: false,
-              callbacks: { label: (context) => `Balance: $${context.parsed.y.toLocaleString()}` }
-            },
-            afterDraw: (chart) => {
-              if (isDarkMode) {
-                const ctx = chart.ctx;
-                ctx.save();
-                ctx.shadowColor = 'rgba(250, 204, 21, 0.5)';
-                ctx.shadowBlur = 20;
-                chart.draw();
-                ctx.restore();
-              }
-            }
-          },
-          interaction: { mode: 'index', intersect: false },
-        };
-
-        if (accountGrowthChart) accountGrowthChart.destroy();
-        accountGrowthChart = new Chart(ctx, { type: 'line', data: chartData, options: chartOptions });
-      }, 50);
-    };
-    window.addEventListener('load', renderChart);
-  </script>
+    
+    if (mobileMenuButton && sidebar && sidebarCloseButton && sidebarOverlay) {
+        const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+        const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+        mobileMenuButton.addEventListener('click', openSidebar);
+        sidebarCloseButton.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+</script>
 </body>
 </html>

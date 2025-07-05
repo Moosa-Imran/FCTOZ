@@ -1,52 +1,843 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" rel="stylesheet">
 
-    <nav class="bg-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        gold: {
+                            50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047',
+                            400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207',
+                            800: '#854d0e', 900: '#713f12', 950: '#422006'
+                        },
+                        gray: {
+                            950: '#0c0c0f',
+                            900: '#121216',
+                            800: '#1a1a1f'
+                        }
+                    },
+                    animation: {
+                        'subtle-shine': 'subtleShine 5s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        subtleShine: {
+                            '0%, 100%': { 'box-shadow': '0 0 20px -5px rgba(234, 179, 8, 0.3)' },
+                            '50%': { 'box-shadow': '0 0 35px 5px rgba(234, 179, 8, 0.5)' },
+                        }
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0c0c0f;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            cursor: none;
+        }
+        .glass-nav {
+            background-color: rgba(12, 12, 15, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .hero-bg, .section-bg {
+            background-image: radial-gradient(circle at 50% 0%, rgba(161, 98, 7, 0.15), transparent 50%),
+                              radial-gradient(circle at 10% 20%, rgba(161, 98, 7, 0.1), transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(161, 98, 7, 0.1), transparent 40%);
+        }
+        .interactive-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            background-image: radial-gradient(circle at 100% 100%, rgba(202, 138, 4, 0.05), transparent 20%);
+        }
+        .interactive-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(202, 138, 4, 0.3);
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.3);
+        }
+        .faq-item .answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .faq-item.open .answer {
+            max-height: 200px; /* Adjust as needed */
+        }
+        .faq-item.open .icon-plus { display: none; }
+        .faq-item:not(.open) .icon-minus { display: none; }
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .platform-logo {
+            filter: grayscale(100%) brightness(0.8);
+            transition: all 0.3s ease;
+        }
+        .platform-logo:hover {
+            filter: grayscale(0%) brightness(1);
+            transform: scale(1.1);
+        }
+        /* Custom Cursor Styles */
+        .cursor-dot, .cursor-outline {
+            pointer-events: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #facc15;
+            z-index: 9999;
+        }
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(250, 204, 21, 0.3);
+            z-index: 9998;
+            transition: width 0.2s ease-out, height 0.2s ease-out, background-color 0.2s ease-out;
+        }
+        body:hover .cursor-dot, body:hover .cursor-outline {
+            opacity: 1;
+        }
+        .cursor-grow .cursor-outline {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(250, 204, 21, 0.15);
+        }
+        @media (max-width: 768px) {
+            body { cursor: auto; }
+            .cursor-dot, .cursor-outline { display: none; }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Header -->
+    <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
                 <div class="flex items-center">
-                    <a href="/" class="font-bold text-2xl text-gray-800">FCTOZ</a>
+                    <a href="/" class="text-3xl font-bold text-white">FCTOZ</a>
                 </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="/" class="text-gray-600 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
-                        <a href="/dashboard" class="text-gray-600 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="#" class="text-gray-600 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Challenges</a>
-                        <a href="#" class="text-gray-600 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">FAQ</a>
-                    </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#challenges" class="text-slate-300 hover:text-gold-400 transition">Challenges</a>
+                    <a href="#features" class="text-slate-300 hover:text-gold-400 transition">Why Us</a>
+                    <a href="#faq" class="text-slate-300 hover:text-gold-400 transition">FAQ</a>
+                    <a href="/academy" class="text-slate-300 hover:text-gold-400 transition">Academy</a>
                 </div>
-                <div class="hidden md:block">
-                     <a href="#" class="text-gray-600 hover:text-gray-800 px-3 py-2">Login</a>
-                     <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md text-sm">Sign Up</a>
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="/login" class="text-slate-300 hover:text-white px-4 py-2 rounded-md">Login</a>
+                    <a href="/signup" class="bg-gold-500 hover:bg-gold-600 text-gray-950 font-semibold px-5 py-2.5 rounded-lg transition shadow-lg shadow-gold-500/20">Get Funded</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-slate-300 hover:text-white">
+                        <i data-lucide="menu" class="h-6 w-6"></i>
+                    </button>
                 </div>
             </div>
+        </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden glass-nav">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 text-center">
+                <a href="#challenges" class="block text-slate-300 hover:text-gold-400 px-3 py-2 rounded-md">Challenges</a>
+                <a href="#features" class="block text-slate-300 hover:text-gold-400 px-3 py-2 rounded-md">Why Us</a>
+                <a href="#faq" class="block text-slate-300 hover:text-gold-400 px-3 py-2 rounded-md">FAQ</a>
+                <a href="/academy" class="block text-slate-300 hover:text-gold-400 px-3 py-2 rounded-md">Academy</a>
+                <div class="border-t border-slate-700 my-4"></div>
+                <a href="/login" class="block text-slate-300 hover:text-white px-3 py-2 rounded-md">Login</a>
+                <a href="/signup" class="block bg-gold-500 hover:bg-gold-600 text-gray-950 font-semibold mx-4 my-2 px-5 py-2.5 rounded-lg transition">Get Funded</a>
+            </div>
         </div>
-    </nav>
+    </header>
 
     <main>
-        <div class="bg-gray-800 text-white">
-            <div class="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 text-center">
-                <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">Welcome to FCTOZ</h1>
-                <p class="mt-6 max-w-2xl mx-auto text-xl text-gray-300">Your journey to becoming a funded crypto trader starts here. Pass our challenge and trade our capital.</p>
-                <div class="mt-8">
-                    <a href="/dashboard" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg">Get Funded Now</a>
+        <!-- Hero Section -->
+        <section class="relative pt-32 pb-24 hero-bg overflow-hidden">
+            <canvas id="particle-canvas"></canvas>
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <p data-aos="fade-up" class="text-gold-400 font-semibold">THE FUTURE OF FUNDED TRADING IS HERE</p>
+                <h1 data-aos="fade-up" data-aos-delay="100" class="mt-4 text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white">
+                    Trade Our Capital. <br> Keep Up To 90% of The Profits.
+                </h1>
+                <p data-aos="fade-up" data-aos-delay="200" class="mt-6 max-w-2xl mx-auto text-lg text-slate-300">
+                    Prove your trading skills, pass our evaluation, and get access to a funded account up to $200,000. No time limits, fast payouts, and a supportive community.
+                </p>
+                <div data-aos="fade-up" data-aos-delay="300" class="mt-10">
+                    <a href="#challenges" class="inline-block bg-gold-500 hover:bg-gold-600 text-gray-950 font-bold py-4 px-10 rounded-lg text-lg transition shadow-lg shadow-gold-500/30 animate-subtle-shine">Start Your Challenge</a>
                 </div>
             </div>
-        </div>
+        </section>
+        
+        <!-- Animated Stats -->
+        <section class="py-16 bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                    <div data-aos="fade-up">
+                        <h3 class="text-4xl font-extrabold text-gold-400" data-count="10000000" data-suffix="M+">$0M+</h3>
+                        <p class="mt-2 text-slate-400">Total Payouts</p>
+                    </div>
+                    <div data-aos="fade-up" data-aos-delay="100">
+                        <h3 class="text-4xl font-extrabold text-gold-400" data-count="24" data-suffix="h">0h</h3>
+                        <p class="mt-2 text-slate-400">Avg. Payout Time</p>
+                    </div>
+                    <div data-aos="fade-up" data-aos-delay="200">
+                        <h3 class="text-4xl font-extrabold text-gold-400" data-count="15000" data-suffix="+">0+</h3>
+                        <p class="mt-2 text-slate-400">Funded Traders</p>
+                    </div>
+                    <div data-aos="fade-up" data-aos-delay="300">
+                        <h3 class="text-4xl font-extrabold text-gold-400" data-count="90" data-suffix="%">0%</h3>
+                        <p class="mt-2 text-slate-400">Max Profit Split</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 data-aos="fade-up" class="text-3xl sm:text-4xl font-bold text-white">Get Funded in 3 Simple Steps</h2>
+                    <p data-aos="fade-up" data-aos-delay="100" class="mt-4 max-w-2xl mx-auto text-slate-400">Our evaluation process is straightforward and designed for traders to succeed.</p>
+                </div>
+                <div class="mt-16 grid md:grid-cols-3 gap-10 text-center">
+                    <div data-aos="fade-up" class="interactive-card p-8 bg-gray-900 border border-slate-800 rounded-2xl group">
+                        <div class="inline-flex items-center justify-center h-16 w-16 bg-gold-500/10 text-gold-400 rounded-xl mb-6 transition-all duration-300 group-hover:bg-gold-500 group-hover:text-white">
+                            <i data-lucide="user-plus" class="h-8 w-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">1. Choose Your Plan</h3>
+                        <p class="mt-2 text-slate-400">Select an account size that fits your trading style. We offer plans from $10k to $200k.</p>
+                    </div>
+                    <div data-aos="fade-up" data-aos-delay="100" class="interactive-card p-8 bg-gray-900 border border-slate-800 rounded-2xl group">
+                        <div class="inline-flex items-center justify-center h-16 w-16 bg-gold-500/10 text-gold-400 rounded-xl mb-6 transition-all duration-300 group-hover:bg-gold-500 group-hover:text-white">
+                            <i data-lucide="target" class="h-8 w-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">2. Pass the Challenge</h3>
+                        <p class="mt-2 text-slate-400">Meet the profit targets within the risk limits. There are no time restrictions. Trade at your own pace.</p>
+                    </div>
+                    <div data-aos="fade-up" data-aos-delay="200" class="interactive-card p-8 bg-gray-900 border border-slate-800 rounded-2xl group">
+                        <div class="inline-flex items-center justify-center h-16 w-16 bg-gold-500/10 text-gold-400 rounded-xl mb-6 transition-all duration-300 group-hover:bg-gold-500 group-hover:text-white">
+                            <i data-lucide="dollar-sign" class="h-8 w-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">3. Get Funded & Paid</h3>
+                        <p class="mt-2 text-slate-400">Once you pass, you become an FCTOZ Funded Trader. Request your profits on-demand.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Challenge Plans -->
+        <section id="challenges" class="py-20 bg-gray-950/30 section-bg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 data-aos="fade-up" class="text-3xl sm:text-4xl font-bold text-white">Our Challenge Plans</h2>
+                    <p data-aos="fade-up" data-aos-delay="100" class="mt-4 max-w-2xl mx-auto text-slate-400">All plans are a one-time fee. Get a full refund when you receive your first payout.</p>
+                </div>
+                <div class="mt-16 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Plan 1 -->
+                    <div data-aos="fade-up" class="interactive-card relative bg-gray-900 border border-slate-800 rounded-2xl p-8 flex flex-col text-center">
+                        <h3 class="text-2xl font-bold text-white">$10,000</h3>
+                        <p class="text-slate-400">Standard Challenge</p>
+                        <p class="text-5xl font-extrabold text-white my-6">$89</p>
+                        <ul class="space-y-3 text-slate-300 text-left flex-grow">
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Profit Target: 8%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Max Loss: 10%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Daily Loss: 5%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Up to 90% Profit Split</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>No Time Limits</li>
+                        </ul>
+                        <a href="/new-challenge" class="mt-8 w-full block bg-gold-500 hover:bg-gold-600 text-gray-950 font-semibold px-5 py-3 rounded-lg transition">Start Challenge</a>
+                    </div>
+                    <!-- Plan 2 -->
+                    <div data-aos="fade-up" data-aos-delay="100" class="interactive-card relative bg-gray-900 border-2 border-gold-500 rounded-2xl p-8 flex flex-col text-center shadow-2xl shadow-gold-500/20">
+                        <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                            <span class="px-4 py-1 text-xs font-semibold text-gray-950 bg-gold-400 rounded-full">MOST POPULAR</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">$25,000</h3>
+                        <p class="text-slate-400">Standard Challenge</p>
+                        <p class="text-5xl font-extrabold text-white my-6">$189</p>
+                        <ul class="space-y-3 text-slate-300 text-left flex-grow">
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Profit Target: 8%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Max Loss: 10%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Daily Loss: 5%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Up to 90% Profit Split</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>No Time Limits</li>
+                        </ul>
+                        <a href="/new-challenge" class="mt-8 w-full block bg-gold-500 hover:bg-gold-600 text-gray-950 font-semibold px-5 py-3 rounded-lg transition">Start Challenge</a>
+                    </div>
+                    <!-- Plan 3 -->
+                    <div data-aos="fade-up" data-aos-delay="200" class="interactive-card relative bg-gray-900 border border-slate-800 rounded-2xl p-8 flex flex-col text-center">
+                        <h3 class="text-2xl font-bold text-white">$50,000</h3>
+                        <p class="text-slate-400">Standard Challenge</p>
+                        <p class="text-5xl font-extrabold text-white my-6">$299</p>
+                        <ul class="space-y-3 text-slate-300 text-left flex-grow">
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Profit Target: 8%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Max Loss: 10%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Daily Loss: 5%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Up to 90% Profit Split</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>No Time Limits</li>
+                        </ul>
+                        <a href="/new-challenge" class="mt-8 w-full block bg-gold-500 hover:bg-gold-600 text-gray-950 font-semibold px-5 py-3 rounded-lg transition">Start Challenge</a>
+                    </div>
+                    <!-- Plan 4 -->
+                    <div data-aos="fade-up" data-aos-delay="300" class="interactive-card relative bg-gray-900 border border-slate-800 rounded-2xl p-8 flex flex-col text-center">
+                        <h3 class="text-2xl font-bold text-white">$100,000</h3>
+                        <p class="text-slate-400">Standard Challenge</p>
+                        <p class="text-5xl font-extrabold text-white my-6">$499</p>
+                        <ul class="space-y-3 text-slate-300 text-left flex-grow">
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Profit Target: 8%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Max Loss: 10%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Daily Loss: 5%</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>Up to 90% Profit Split</li>
+                            <li class="flex items-center"><i data-lucide="check-circle-2" class="h-5 w-5 text-green-500 mr-3"></i>No Time Limits</li>
+                        </ul>
+                        <a href="/new-challenge" class="mt-8 w-full block bg-gold-500 hover:bg-gold-600 text-gray-950 font-semibold px-5 py-3 rounded-lg transition">Start Challenge</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Section -->
+        <section class="py-24">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 data-aos="fade-up" class="text-3xl sm:text-4xl font-bold text-white">The FCTOZ Difference</h2>
+                    <p data-aos="fade-up" data-aos-delay="100" class="mt-4 max-w-2xl mx-auto text-slate-400">See how we stack up against other prop firms.</p>
+                </div>
+                <div data-aos="fade-up" data-aos-delay="200" class="mt-16 max-w-4xl mx-auto">
+                    <div class="bg-gray-900 border border-slate-800 rounded-2xl overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-800">
+                                <tr>
+                                    <th class="p-6 text-left text-lg font-bold text-white">Feature</th>
+                                    <th class="p-6 text-center text-lg font-bold text-white">FCTOZ</th>
+                                    <th class="p-6 text-center text-lg font-bold text-slate-500">Other Firms</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                <tr class="hover:bg-gray-800/50">
+                                    <td class="p-6 font-semibold">Profit Split</td>
+                                    <td class="p-6 text-center font-bold text-gold-400">Up to 90%</td>
+                                    <td class="p-6 text-center text-slate-400">50% - 80%</td>
+                                </tr>
+                                <tr class="hover:bg-gray-800/50">
+                                    <td class="p-6 font-semibold">Time Limits</td>
+                                    <td class="p-6 text-center"><i data-lucide="check" class="h-6 w-6 mx-auto text-green-500"></i><span class="sr-only">Yes</span></td>
+                                    <td class="p-6 text-center"><i data-lucide="x" class="h-6 w-6 mx-auto text-red-500"></i><span class="sr-only">No</span></td>
+                                </tr>
+                                <tr class="hover:bg-gray-800/50">
+                                    <td class="p-6 font-semibold">On-Demand Payouts</td>
+                                    <td class="p-6 text-center"><i data-lucide="check" class="h-6 w-6 mx-auto text-green-500"></i><span class="sr-only">Yes</span></td>
+                                    <td class="p-6 text-center text-slate-400">Bi-weekly / Monthly</td>
+                                </tr>
+                                <tr class="hover:bg-gray-800/50">
+                                    <td class="p-6 font-semibold">Weekend Holding</td>
+                                    <td class="p-6 text-center"><i data-lucide="check" class="h-6 w-6 mx-auto text-green-500"></i><span class="sr-only">Yes</span></td>
+                                    <td class="p-6 text-center"><i data-lucide="x" class="h-6 w-6 mx-auto text-red-500"></i><span class="sr-only">No</span></td>
+                                </tr>
+                                <tr class="hover:bg-gray-800/50">
+                                    <td class="p-6 font-semibold">Refundable Fee</td>
+                                    <td class="p-6 text-center"><i data-lucide="check" class="h-6 w-6 mx-auto text-green-500"></i><span class="sr-only">Yes</span></td>
+                                    <td class="p-6 text-center text-slate-400">Sometimes</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Scaling Plan Section -->
+        <section class="py-20 bg-gray-950/30 section-bg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 data-aos="fade-up" class="text-3xl sm:text-4xl font-bold text-white">Grow With Us: Our Scaling Plan</h2>
+                    <p data-aos="fade-up" data-aos-delay="100" class="mt-4 max-w-2xl mx-auto text-slate-400">We reward consistency. Grow your account balance by meeting simple performance metrics.</p>
+                </div>
+                <div data-aos="fade-up" data-aos-delay="200" class="mt-16 relative">
+                    <!-- The connecting line -->
+                    <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-slate-800 -translate-y-1/2"></div>
+                    <div class="grid md:grid-cols-3 gap-16 relative">
+                        <div class="text-center">
+                            <div class="relative z-10 inline-flex items-center justify-center h-20 w-20 bg-gray-900 border-2 border-gold-500 text-gold-400 rounded-full mb-4 text-2xl font-bold">1</div>
+                            <h3 class="text-xl font-bold text-white">Become Funded</h3>
+                            <p class="mt-2 text-slate-400">Pass the initial challenge to get your first funded account.</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="relative z-10 inline-flex items-center justify-center h-20 w-20 bg-gray-900 border-2 border-gold-500 text-gold-400 rounded-full mb-4 text-2xl font-bold">2</div>
+                            <h3 class="text-xl font-bold text-white">Stay Consistent</h3>
+                            <p class="mt-2 text-slate-400">Achieve a profit of 10% or more over a 3-month period.</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="relative z-10 inline-flex items-center justify-center h-20 w-20 bg-gray-900 border-2 border-gold-500 text-gold-400 rounded-full mb-4 text-2xl font-bold">3</div>
+                            <h3 class="text-xl font-bold text-white">Scale Up</h3>
+                            <p class="mt-2 text-slate-400">We'll increase your account balance by 25% and review for further increases quarterly.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Payout System -->
+        <section class="py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid md:grid-cols-2 gap-16 items-center">
+                    <div data-aos="fade-right">
+                        <h2 class="text-3xl sm:text-4xl font-bold text-white">Fast & Flexible Payouts</h2>
+                        <p class="mt-4 text-slate-400">Your profits, your way. We've streamlined the payout process to be as simple and fast as possible. Get paid on-demand in crypto or via bank transfer.</p>
+                        <ul class="mt-6 space-y-4">
+                            <li class="flex items-start">
+                                <i data-lucide="check-circle" class="h-6 w-6 text-gold-400 mr-3 mt-1 flex-shrink-0"></i>
+                                <div>
+                                    <h4 class="font-semibold text-white">Request Anytime</h4>
+                                    <p class="text-slate-400">Once you're a funded trader, you can request a payout anytime you're in profit.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i data-lucide="check-circle" class="h-6 w-6 text-gold-400 mr-3 mt-1 flex-shrink-0"></i>
+                                <div>
+                                    <h4 class="font-semibold text-white">Multiple Options</h4>
+                                    <p class="text-slate-400">Choose to receive your funds in BTC, ETH, USDT, or through a standard bank wire.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i data-lucide="check-circle" class="h-6 w-6 text-gold-400 mr-3 mt-1 flex-shrink-0"></i>
+                                <div>
+                                    <h4 class="font-semibold text-white">Processed within 24 Hours</h4>
+                                    <p class="text-slate-400">Our finance team works fast to ensure your profits are sent out promptly.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div data-aos="fade-left" class="p-8 bg-gray-900 border border-slate-800 rounded-2xl">
+                        <img src="https://placehold.co/600x400/0c0c0f/eab308?text=Payout+System" alt="Payout System Illustration" class="rounded-lg">
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Top Leaders Section -->
+        <section class="py-20 bg-gray-950/30 section-bg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 data-aos="fade-up" class="text-3xl sm:text-4xl font-bold text-white">Meet Our Top Traders</h2>
+                    <p data-aos="fade-up" data-aos-delay="100" class="mt-4 max-w-2xl mx-auto text-slate-400">Get inspired by the success of our leading funded traders.</p>
+                </div>
+                <div class="mt-16 grid md:grid-cols-3 gap-8">
+                    <% topLeaders.forEach((leader, index) => { %>
+                        <% if (leader.rank === 2) { %>
+                        <div data-aos="fade-up" data-aos-delay="100" class="interactive-card text-center p-8 bg-gray-900 border border-slate-800 rounded-2xl">
+                            <span class="text-5xl">🥈</span>
+                            <img src="https://i.pravatar.cc/150?u=leader<%= leader.rank %>" alt="<%= leader.name %>" class="w-24 h-24 rounded-full mx-auto mt-4 mb-4 border-4 border-slate-700">
+                            <h3 class="text-xl font-bold text-white"><%= leader.name %> <span class="fi fi-<%= leader.country %> ml-1"></span></h3>
+                            <p class="text-slate-400">Payout: <span class="font-bold text-green-400">$<%= leader.payout.toLocaleString() %></span></p>
+                        </div>
+                        <% } else if (leader.rank === 1) { %>
+                        <div data-aos="fade-up" class="interactive-card text-center p-8 bg-gray-900 border-2 border-gold-400 rounded-2xl shadow-2xl shadow-gold-500/20 relative -translate-y-0 md:-translate-y-6">
+                            <span class="text-6xl">🥇</span>
+                            <img src="https://i.pravatar.cc/150?u=leader<%= leader.rank %>" alt="<%= leader.name %>" class="w-32 h-32 rounded-full mx-auto mt-4 mb-4 border-4 border-gold-400">
+                            <h3 class="text-2xl font-bold text-white"><%= leader.name %> <span class="fi fi-<%= leader.country %> ml-1"></span></h3>
+                            <p class="text-slate-400 text-lg">Payout: <span class="font-bold text-green-400">$<%= leader.payout.toLocaleString() %></span></p>
+                        </div>
+                        <% } else if (leader.rank === 3) { %>
+                        <div data-aos="fade-up" data-aos-delay="200" class="interactive-card text-center p-8 bg-gray-900 border border-slate-800 rounded-2xl">
+                            <span class="text-5xl">🥉</span>
+                            <img src="https://i.pravatar.cc/150?u=leader<%= leader.rank %>" alt="<%= leader.name %>" class="w-24 h-24 rounded-full mx-auto mt-4 mb-4 border-4 border-slate-700">
+                            <h3 class="text-xl font-bold text-white"><%= leader.name %> <span class="fi fi-<%= leader.country %> ml-1"></span></h3>
+                            <p class="text-slate-400">Payout: <span class="font-bold text-green-400">$<%= leader.payout.toLocaleString() %></span></p>
+                        </div>
+                        <% } %>
+                    <% }); %>
+                </div>
+                <div data-aos="fade-up" class="text-center mt-12">
+                    <a href="/leaderboard" class="font-semibold text-gold-400 hover:text-gold-300 transition">View Full Leaderboard <i data-lucide="arrow-right" class="inline h-4 w-4"></i></a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials -->
+        <section class="py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 data-aos="fade-up" class="text-3xl sm:text-4xl font-bold text-white">What Our Traders Say</h2>
+                </div>
+                <div class="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Testimonial 1 -->
+                    <div data-aos="fade-up" class="interactive-card p-8 bg-gray-900 border border-slate-800 rounded-2xl">
+                        <p class="text-slate-300">"FCTOZ gave me the opportunity to trade with serious capital. The rules are fair and the payout system is the fastest I've ever seen. Truly a game-changer!"</p>
+                        <div class="mt-6 flex items-center">
+                            <img src="https://i.pravatar.cc/40?u=1" alt="Alex T." class="h-12 w-12 rounded-full">
+                            <div class="ml-4">
+                                <p class="font-bold text-white">Alex T.</p>
+                                <p class="text-sm text-slate-400">FCTOZ Funded Trader</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Testimonial 2 -->
+                    <div data-aos="fade-up" data-aos-delay="100" class="interactive-card p-8 bg-gray-900 border border-slate-800 rounded-2xl">
+                        <p class="text-slate-300">"I passed my $50k challenge in three weeks. The support on Discord is amazing, and I received my first payout just 24 hours after requesting it. Highly recommended!"</p>
+                        <div class="mt-6 flex items-center">
+                            <img src="https://i.pravatar.cc/40?u=2" alt="Fatima K." class="h-12 w-12 rounded-full">
+                            <div class="ml-4">
+                                <p class="font-bold text-white">Fatima K.</p>
+                                <p class="text-sm text-slate-400">FCTOZ Funded Trader</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Testimonial 3 -->
+                    <div data-aos="fade-up" data-aos-delay="200" class="interactive-card p-8 bg-gray-900 border border-slate-800 rounded-2xl">
+                        <p class="text-slate-300">"As someone who was struggling with a small personal account, FCTOZ has been a blessing. The no-time-limit rule removed all the psychological pressure."</p>
+                        <div class="mt-6 flex items-center">
+                            <img src="https://i.pravatar.cc/40?u=3" alt="Kenji M." class="h-12 w-12 rounded-full">
+                            <div class="ml-4">
+                                <p class="font-bold text-white">Kenji M.</p>
+                                <p class="text-sm text-slate-400">FCTOZ Funded Trader</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" class="py-24 bg-gray-950/30">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 data-aos="fade-up" class="text-3xl sm:text-4xl font-bold text-white">Frequently Asked Questions</h2>
+                </div>
+                <div class="mt-12 space-y-4">
+                    <!-- FAQ 1 -->
+                    <div data-aos="fade-up" class="faq-item bg-gray-900 border border-slate-800 rounded-lg p-6 interactive-card">
+                        <button class="w-full flex justify-between items-center text-left">
+                            <span class="font-semibold text-white">What is the profit split?</span>
+                            <span class="text-gold-400">
+                                <i data-lucide="plus" class="icon-plus h-5 w-5"></i>
+                                <i data-lucide="minus" class="icon-minus h-5 w-5"></i>
+                            </span>
+                        </button>
+                        <div class="answer pt-4 text-slate-400">
+                            You start with a generous 80% profit split. After two successful payouts and demonstrating consistent profitability, we will increase your split to 90%.
+                        </div>
+                    </div>
+                    <!-- FAQ 2 -->
+                    <div data-aos="fade-up" data-aos-delay="100" class="faq-item bg-gray-900 border border-slate-800 rounded-lg p-6 interactive-card">
+                        <button class="w-full flex justify-between items-center text-left">
+                            <span class="font-semibold text-white">Are there any time limits to pass the challenge?</span>
+                            <span class="text-gold-400">
+                                <i data-lucide="plus" class="icon-plus h-5 w-5"></i>
+                                <i data-lucide="minus" class="icon-minus h-5 w-5"></i>
+                            </span>
+                        </button>
+                        <div class="answer pt-4 text-slate-400">
+                            No, there are no time limits. You can take as much time as you need to reach the profit target, as long as you respect the drawdown rules.
+                        </div>
+                    </div>
+                    <!-- FAQ 3 -->
+                    <div data-aos="fade-up" data-aos-delay="200" class="faq-item bg-gray-900 border border-slate-800 rounded-lg p-6 interactive-card">
+                        <button class="w-full flex justify-between items-center text-left">
+                            <span class="font-semibold text-white">Can I hold trades over the weekend?</span>
+                            <span class="text-gold-400">
+                                <i data-lucide="plus" class="icon-plus h-5 w-5"></i>
+                                <i data-lucide="minus" class="icon-minus h-5 w-5"></i>
+                            </span>
+                        </button>
+                        <div class="answer pt-4 text-slate-400">
+                            Yes, you are allowed to hold trades over the weekend and during news events. We believe in giving our traders the flexibility to trade their own style.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="py-24 section-bg">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 data-aos="fade-up" class="text-3xl sm:text-5xl font-extrabold text-white">Ready to Become Our Next Funded Trader?</h2>
+                <p data-aos="fade-up" data-aos-delay="100" class="mt-6 max-w-2xl mx-auto text-lg text-slate-300">Join thousands of traders who have transformed their careers with FCTOZ. Your journey starts with a single click.</p>
+                <div data-aos="fade-up" data-aos-delay="200" class="mt-10">
+                    <a href="#challenges" class="inline-block bg-gold-500 hover:bg-gold-600 text-gray-950 font-bold py-4 px-10 rounded-lg text-lg transition shadow-lg shadow-gold-500/30 animate-subtle-shine">Start My Challenge Today</a>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <footer class="bg-gray-800">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-gray-400">&copy; 2024 FCTOZ - Funding Crypto Organization. All Rights Reserved.</p>
+    <!-- Footer -->
+    <footer class="bg-gray-950/50 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="font-semibold text-white">FCTOZ</h3>
+                    <p class="mt-2 text-sm text-slate-400">Funding the next generation of crypto traders.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-white">Quick Links</h3>
+                    <ul class="mt-2 space-y-2 text-sm">
+                        <li><a href="#challenges" class="text-slate-400 hover:text-gold-400">Challenges</a></li>
+                        <li><a href="#faq" class="text-slate-400 hover:text-gold-400">FAQ</a></li>
+                        <li><a href="/dashboard" class="text-slate-400 hover:text-gold-400">Login</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-white">Legal</h3>
+                    <ul class="mt-2 space-y-2 text-sm">
+                        <li><a href="#" class="text-slate-400 hover:text-gold-400">Terms of Service</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-gold-400">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-white">Connect</h3>
+                    <div class="flex mt-2 space-x-4">
+                        <a href="#" class="text-slate-400 hover:text-gold-400"><i data-lucide="twitter"></i></a>
+                        <a href="#" class="text-slate-400 hover:text-gold-400"><i data-lucide="youtube"></i></a>
+                        <a href="#" class="text-slate-400 hover:text-gold-400"><i data-lucide="send"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
+                <p>&copy; 2024 FCTOZ - Funding Crypto Organization. All Rights Reserved.</p>
+                <p class="mt-2">FCTOZ is a proprietary trading firm. All traders are independent contractors.</p>
+            </div>
         </div>
     </footer>
+    
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            AOS.init({
+                duration: 800,
+                once: true,
+            });
 
+            // Sticky Header
+            const header = document.getElementById('main-header');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 10) {
+                    header.classList.add('glass-nav');
+                } else {
+                    header.classList.remove('glass-nav');
+                }
+            });
+
+            // Mobile Menu
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // FAQ Accordion
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const button = item.querySelector('button');
+                button.addEventListener('click', () => {
+                    faqItems.forEach(otherItem => {
+                        if (otherItem !== item && otherItem.classList.contains('open')) {
+                            otherItem.classList.remove('open');
+                        }
+                    });
+                    item.classList.toggle('open');
+                });
+            });
+
+            // Animated Counter
+            const counters = document.querySelectorAll('[data-count]');
+            const speed = 200; 
+
+            const animateCounter = (counter) => {
+                const target = +counter.getAttribute('data-count');
+                const suffix = counter.getAttribute('data-suffix') || '';
+                
+                const updateCount = () => {
+                    const currentValStr = counter.innerText.replace(/[\$,M\+h%]/g, '');
+                    const count = +currentValStr;
+                    const inc = target / speed;
+
+                    if (count < target) {
+                        const newCount = Math.ceil(count + inc);
+                        if (counter.dataset.suffix.includes('M')) {
+                            counter.innerText = '$' + (newCount / 1000000).toFixed(1) + 'M+';
+                        } else {
+                             counter.innerText = newCount.toLocaleString() + suffix;
+                        }
+                        setTimeout(updateCount, 15);
+                    } else {
+                        if (counter.dataset.suffix.includes('M')) {
+                           counter.innerText = '$' + (target / 1000000).toFixed(0) + 'M+';
+                        } else {
+                           counter.innerText = target.toLocaleString() + suffix;
+                        }
+                    }
+                };
+                updateCount();
+            };
+            
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting){
+                        animateCounter(entry.target);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            counters.forEach(counter => {
+                observer.observe(counter);
+            });
+            
+            // Particle JS
+            const canvas = document.getElementById('particle-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                let particlesArray;
+
+                let mouse = {
+                    x: null,
+                    y: null,
+                    radius: (canvas.height/80) * (canvas.width/80)
+                }
+
+                window.addEventListener('mousemove', 
+                    function(event) {
+                        mouse.x = event.x;
+                        mouse.y = event.y;
+                    }
+                );
+
+                class Particle {
+                    constructor(x, y, directionX, directionY, size, color) {
+                        this.x = x;
+                        this.y = y;
+                        this.directionX = directionX;
+                        this.directionY = directionY;
+                        this.size = size;
+                        this.color = color;
+                    }
+                    draw() {
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                        ctx.fillStyle = 'rgba(202, 138, 4, 0.2)';
+                        ctx.fill();
+                    }
+                    update() {
+                        if (this.x > canvas.width || this.x < 0) {
+                            this.directionX = -this.directionX;
+                        }
+                        if (this.y > canvas.height || this.y < 0) {
+                            this.directionY = -this.directionY;
+                        }
+
+                        let dx = mouse.x - this.x;
+                        let dy = mouse.y - this.y;
+                        let distance = Math.sqrt(dx*dx + dy*dy);
+                        if (distance < mouse.radius + this.size){
+                            if (mouse.x < this.x && this.x < canvas.width - this.size * 10) { this.x += 3; }
+                            if (mouse.x > this.x && this.x > this.size * 10) { this.x -= 3; }
+                            if (mouse.y < this.y && this.y < canvas.height - this.size * 10) { this.y += 3; }
+                            if (mouse.y > this.y && this.y > this.size * 10) { this.y -= 3; }
+                        }
+                        this.x += this.directionX;
+                        this.y += this.directionY;
+                        this.draw();
+                    }
+                }
+
+                function init() {
+                    particlesArray = [];
+                    let numberOfParticles = (canvas.height * canvas.width) / 9000;
+                    for (let i = 0; i < numberOfParticles; i++) {
+                        let size = (Math.random() * 2) + 1;
+                        let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+                        let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+                        let directionX = (Math.random() * 0.4) - 0.2;
+                        let directionY = (Math.random() * 0.4) - 0.2;
+                        particlesArray.push(new Particle(x, y, directionX, directionY, size));
+                    }
+                }
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    ctx.clearRect(0,0,innerWidth, innerHeight);
+
+                    for (let i=0; i < particlesArray.length; i++) {
+                        particlesArray[i].update();
+                    }
+                }
+                init();
+                animate();
+
+                 window.addEventListener('resize',
+                    function(){
+                        canvas.width = innerWidth;
+                        canvas.height = innerHeight;
+                        mouse.radius = ((canvas.height/80) * (canvas.height/80));
+                        init();
+                    }
+                );
+            }
+
+            // Custom Cursor Logic
+            const cursorDot = document.querySelector(".cursor-dot");
+            const cursorOutline = document.querySelector(".cursor-outline");
+            const body = document.querySelector("body");
+
+            window.addEventListener("mousemove", function (e) {
+                const posX = e.clientX;
+                const posY = e.clientY;
+
+                cursorDot.style.left = `${posX}px`;
+                cursorDot.style.top = `${posY}px`;
+
+                cursorOutline.animate({
+                    left: `${posX}px`,
+                    top: `${posY}px`
+                }, { duration: 500, fill: "forwards" });
+            });
+
+            const interactiveElements = document.querySelectorAll('a, button');
+            interactiveElements.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    body.classList.add('cursor-grow');
+                });
+                el.addEventListener('mouseleave', () => {
+                    body.classList.remove('cursor-grow');
+                });
+            });
+
+        });
+    </script>
 </body>
 </html>

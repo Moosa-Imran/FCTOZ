@@ -3,7 +3,37 @@ const router = express.Router();
 
 // Route for the landing page
 router.get('/', (req, res) => {
-  res.render('landing', { title: 'FCTOZ - Funding Crypto Organization' });
+    // Data for the new Top Leaders section on the landing page
+    const topLeadersData = [
+        { rank: 1, name: 'CryptoKing', country: 'ae', payout: 25450.00 },
+        { rank: 2, name: 'TradingWhiz', country: 'us', payout: 22100.50 },
+        { rank: 3, name: 'GoldMiner', country: 'za', payout: 19870.00 },
+    ];
+    res.render('landing', { 
+        title: 'FCTOZ - Funding Crypto Organization',
+        topLeaders: topLeadersData 
+    });
+});
+
+// Route for the Login page
+router.get('/login', (req, res) => {
+    res.render('login', { title: 'Login - FCTOZ' });
+});
+
+// Route for the Signup page
+router.get('/signup', (req, res) => {
+    res.render('signup', { title: 'Sign Up - FCTOZ' });
+});
+
+// Route for the New Challenge page
+router.get('/new-challenge', (req, res) => {
+    const plansData = [
+        { id: '10k', size: 10000, price: 89, target: 8, maxLoss: 10, dailyLoss: 5, popular: false },
+        { id: '25k', size: 25000, price: 189, target: 8, maxLoss: 10, dailyLoss: 5, popular: true },
+        { id: '50k', size: 50000, price: 299, target: 8, maxLoss: 10, dailyLoss: 5, popular: false },
+        { id: '100k', size: 100000, price: 499, target: 8, maxLoss: 10, dailyLoss: 5, popular: false }
+    ];
+    res.render('new_challenge', { title: 'Start New Challenge - FCTOZ', plans: plansData });
 });
 
 // Route for the dashboard page
@@ -37,7 +67,7 @@ router.get('/dashboard', (req, res) => {
   res.render('dashboard', { title: 'FCTOZ Customer Panel', user: userData });
 });
 
-// NEW: Route for the "My Challenges" page
+// Route for the "My Challenges" page
 router.get('/challenges', (req, res) => {
   const challengeData = {
     activeChallenge: {
@@ -77,7 +107,7 @@ router.get('/challenges', (req, res) => {
   res.render('challenges', { title: 'My Challenges - FCTOZ', challenges: challengeData });
 });
 
-// NEW: Route for the "P&L Reports" page
+// Route for the "P&L Reports" page
 router.get('/reports', (req, res) => {
   const reportData = {
     submissions: [
@@ -90,7 +120,7 @@ router.get('/reports', (req, res) => {
   res.render('reports', { title: 'P&L Reports - FCTOZ', reports: reportData });
 });
 
-// NEW: Route for the "Payouts" page
+// Route for the "Payouts" page
 router.get('/payouts', (req, res) => {
   const payoutData = {
     payoutAddresses: [
@@ -107,61 +137,161 @@ router.get('/payouts', (req, res) => {
   res.render('payouts', { title: 'Payouts - FCTOZ', payouts: payoutData });
 });
 
-// NEW: Route for the "Leaderboard" page
+// Route for the "Leaderboard" page
 router.get('/leaderboard', (req, res) => {
+  // Mock data for the top 15 traders
   const leaderboardData = [
-    { rank: 1, name: 'CryptoKing', country: 'AE', payout: 25450.00 },
-    { rank: 2, name: 'TradingWhiz', country: 'US', payout: 22100.50 },
-    { rank: 3, name: 'Hamza Crypto', country: 'PK', payout: 19870.00 },
-    { rank: 4, name: 'ScalperPro', country: 'GB', payout: 18500.00 },
-    { rank: 5, name: 'LunaQueen', country: 'KR', payout: 17950.25 },
-    { rank: 6, name: 'BitcoinBULL', country: 'DE', payout: 16200.00 },
-    { rank: 7, name: 'EthEvangelist', country: 'CA', payout: 15150.80 },
-    { rank: 8, name: 'TheOracle', country: 'IN', payout: 14900.00 },
-    { rank: 9, name: 'ProfitProphet', country: 'AU', payout: 13500.00 },
-    { rank: 10, name: 'MarginMaster', country: 'JP', payout: 12800.75 },
+    { rank: 1, name: 'CryptoKing', country: 'ae', payout: 25450.00 },
+    { rank: 2, name: 'TradingWhiz', country: 'us', payout: 22100.50 },
+    { rank: 3, name: 'GoldMiner', country: 'za', payout: 19870.00 },
+    { rank: 4, name: 'ScalperPro', country: 'gb', payout: 18500.00 },
+    { rank: 5, name: 'LunaQueen', country: 'kr', payout: 17950.25 },
+    { rank: 6, name: 'BitcoinBULL', country: 'de', payout: 16200.00 },
+    { rank: 7, name: 'EthEvangelist', country: 'ca', payout: 15150.80 },
+    { rank: 8, name: 'TheOracle', country: 'in', payout: 14900.00 },
+    { rank: 9, name: 'ProfitProphet', country: 'au', payout: 13500.00 },
+    { rank: 10, name: 'MarginMaster', country: 'jp', payout: 12800.75 },
+    { rank: 11, name: 'DayTraderJane', country: 'br', payout: 12100.00 },
+    { rank: 12, name: 'SwingKing', country: 'fr', payout: 11550.00 },
+    { rank: 13, name: 'CryptoGoddess', country: 'ng', payout: 11200.50 },
+    { rank: 14, name: 'FutureFlow', country: 'cn', payout: 10800.00 },
+    { rank: 15, name: 'ApexTrader', country: 'ru', payout: 10500.25 },
   ];
-  res.render('leaderboard', { title: 'Leaderboard - FCTOZ', leaders: leaderboardData });
+
+  // Mock data for the current user
+  const currentUserData = {
+    rank: 121,
+    name: 'Hamza Crypto', // Assuming this is the current user
+    country: 'pk',
+    payout: 8500.00
+  };
+  
+  res.render('leaderboard', { 
+    title: 'Leaderboard - FCTOZ', 
+    leaders: leaderboardData,
+    currentUser: currentUserData 
+  });
 });
 
-// NEW: Route for the "FCTOZ Academy" page
+// Route for the "FCTOZ Academy" page
 router.get('/academy', (req, res) => {
     const academyData = {
-        categories: ['Blockchain Education', 'Risk Management', 'Web3', 'NFTs', 'Success Stories'],
+        // Main featured article
+        featuredArticle: {
+            id: 'A1',
+            title: 'Mastering Risk: The Unspoken Key to Consistent Profits',
+            category: 'Risk Management',
+            author: 'Admin',
+            date: 'July 4, 2025',
+            readTime: '8 min read',
+            imageUrl: 'https://placehold.co/800x400/a16207/white?text=Mastering+Risk',
+            excerpt: 'Beyond just setting stop-losses, true risk management is about position sizing, understanding market correlation, and psychological discipline. This article dives deep into the strategies the pros use to protect their capital and ensure long-term success...'
+        },
+        // Structured learning paths
+        learningPaths: [
+            {
+                title: 'DeFi for Beginners',
+                description: 'Start your journey into the world of Decentralized Finance. No prior experience needed.',
+                articleCount: 4,
+                icon: 'compass',
+                color: 'blue'
+            },
+            {
+                title: 'Advanced Charting Techniques',
+                description: 'Go beyond basic trendlines and learn about Fibonacci, Ichimoku clouds, and more.',
+                articleCount: 6,
+                icon: 'bar-chart-3',
+                color: 'purple'
+            },
+            {
+                title: 'NFT Trading & Analysis',
+                description: 'Understand the NFT market, from minting to flipping for profit.',
+                articleCount: 5,
+                icon: 'gem',
+                color: 'pink'
+            }
+        ],
+        // All available articles
         articles: [
-            { 
-                id: 'A1',
-                title: 'Mastering Risk: The Key to Consistent Profits', 
-                category: 'Risk Management', 
-                author: 'Admin', 
-                date: 'June 28, 2025', 
-                readTime: '8 min read',
-                imageUrl: 'https://placehold.co/600x400/a16207/white?text=Risk+Mgmt'
-            },
-            { 
+            {
                 id: 'A2',
-                title: 'An Introduction to Decentralized Finance (DeFi)', 
-                category: 'Blockchain Education', 
-                author: 'Admin', 
-                date: 'June 25, 2025', 
+                title: 'An Introduction to Decentralized Finance (DeFi)',
+                category: 'Blockchain Education',
+                author: 'Admin',
+                date: 'June 25, 2025',
                 readTime: '12 min read',
-                imageUrl: 'https://placehold.co/600x400/1d4ed8/white?text=DeFi'
+                imageUrl: 'https://placehold.co/600x400/1d4ed8/white?text=DeFi',
+                difficulty: 'Beginner',
+                icon: 'book-open'
             },
-            { 
+            {
                 id: 'A3',
-                title: 'From $1k to $50k: A Trader\'s Journey', 
-                category: 'Success Stories', 
-                author: 'Admin', 
-                date: 'June 22, 2025', 
+                title: 'From $1k to $50k: A Trader\'s Journey',
+                category: 'Success Stories',
+                author: 'Admin',
+                date: 'June 22, 2025',
                 readTime: '6 min read',
-                imageUrl: 'https://placehold.co/600x400/166534/white?text=Success'
+                imageUrl: 'https://placehold.co/600x400/166534/white?text=Success',
+                difficulty: 'All Levels',
+                icon: 'award'
             },
+            {
+                id: 'A4',
+                title: 'What Are NFTs and How Do They Work?',
+                category: 'NFTs',
+                author: 'Jane Doe',
+                date: 'June 20, 2025',
+                readTime: '10 min read',
+                imageUrl: 'https://placehold.co/600x400/be185d/white?text=NFTs',
+                difficulty: 'Beginner',
+                icon: 'gem'
+            },
+            {
+                id: 'A5',
+                title: 'The Psychology of Trading: Overcoming Fear and Greed',
+                category: 'Risk Management',
+                author: 'Admin',
+                date: 'June 18, 2025',
+                readTime: '15 min read',
+                imageUrl: 'https://placehold.co/600x400/9333ea/white?text=Psychology',
+                difficulty: 'Intermediate',
+                icon: 'brain-circuit'
+            },
+            {
+                id: 'A6',
+                title: 'Exploring the Potential of Web3 Gaming',
+                category: 'Web3',
+                author: 'John Smith',
+                date: 'June 15, 2025',
+                readTime: '9 min read',
+                imageUrl: 'https://placehold.co/600x400/fb923c/white?text=Web3+Gaming',
+                difficulty: 'Intermediate',
+                icon: 'gamepad-2'
+            },
+            {
+                id: 'A7',
+                title: 'How to Read Candlestick Charts Like a Pro',
+                category: 'Blockchain Education',
+                author: 'Admin',
+                date: 'June 12, 2025',
+                readTime: '7 min read',
+                imageUrl: 'https://placehold.co/600x400/475569/white?text=Candlesticks',
+                difficulty: 'Advanced',
+                icon: 'bar-chart-3'
+            }
+        ],
+        // Video content
+        videos: [
+            { id: 'V1', title: '5 Common Mistakes New Traders Make', duration: '10:32', thumbnail: 'https://placehold.co/400x225/b91c1c/white?text=Video+1' },
+            { id: 'V2', title: 'Setting Up Your First Crypto Wallet', duration: '08:15', thumbnail: 'https://placehold.co/400x225/047857/white?text=Video+2' },
+            { id: 'V3', title: 'Live Trading Session: Scalping BTC', duration: '45:12', thumbnail: 'https://placehold.co/400x225/4338ca/white?text=Video+3' },
         ]
     };
     res.render('academy', { title: 'FCTOZ Academy', academy: academyData });
 });
 
-// NEW: Route for the "Support Tickets" page
+
+// Route for the "Support Tickets" page
 router.get('/tickets', (req, res) => {
     const ticketData = {
         activeTickets: [
@@ -175,7 +305,7 @@ router.get('/tickets', (req, res) => {
     res.render('tickets', { title: 'Support Tickets - FCTOZ', tickets: ticketData });
 });
 
-// NEW: Route for the "Account Settings" page
+// Route for the "Account Settings" page
 router.get('/settings', (req, res) => {
     const settingsData = {
         user: {

@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" class="light">
 
-<!-- Head -->
-  <%- include('partials/head.ejs') %>
+<%- include('partials/head.ejs') %>
 
 <body class="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200">
 
@@ -12,60 +11,82 @@
     <!-- Sidebar -->
     <%- include('partials/sidebar.ejs') %>
 
-    <!-- Main Content -->
-    <div class="flex-1 md:ml-64">
+    <!-- Main Content: Added min-w-0 to prevent flexbox overflow on mobile -->
+    <div class="flex-1 md:ml-64 min-w-0">
 
       <!-- Header/Navbar -->
-       <%- include('partials/header.ejs') %>
+      <%- include('partials/header.ejs') %>
 
       <main class="pt-24 px-4 sm:px-6 lg:px-8 pb-8">
         <!-- Welcome Header -->
         <div>
-          <h1 class="text-3xl font-bold">Welcome Back, <%= (typeof user !== 'undefined' && user.name) ? user.name : 'Trader' %>!</h1>
-          <p class="mt-1 text-slate-500 dark:text-slate-400">Here's your FCTOZ account overview. (<%= (typeof user !== 'undefined' && user.userId) ? user.userId : 'N/A' %>)</p>
+          <h1 class="text-2xl sm:text-3xl font-bold">Welcome Back, <%= (typeof user !== 'undefined' && user.name) ? user.name : 'Trader' %>!</h1>
+          <p class="mt-1 text-slate-500 dark:text-slate-400">Here's your FCTOZ account overview. User ID: <span class="font-mono"><%= (typeof user !== 'undefined' && user.userId) ? user.userId : 'N/A' %></span></p>
+        </div>
+
+        <!-- Main Action Buttons -->
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button class="w-full flex items-center justify-center gap-2 px-5 py-3 text-base font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-black button-glow shadow-lg">
+                <i data-lucide="arrow-down-circle" class="h-5 w-5"></i> Deposit Funds
+            </button>
+            <button class="w-full flex items-center justify-center gap-2 px-5 py-3 text-base font-medium text-slate-800 dark:text-white bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 dark:focus:ring-offset-black">
+                <i data-lucide="arrow-up-circle" class="h-5 w-5"></i> Request Withdrawal
+            </button>
         </div>
 
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+          <!-- Account Balance Card -->
           <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Account Balance</p>
                 <p class="text-3xl font-bold mt-1">$<%= (typeof user !== 'undefined' && user.accountBalance) ? user.accountBalance.toLocaleString() : '0' %></p>
               </div>
-              <div class="p-2 bg-gold-100 dark:bg-gold-500/10 rounded-lg"> <i data-lucide="wallet" class="h-6 w-6 text-gold-500 dark:text-gold-400"></i> </div>
+              <div class="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-gold-100 dark:bg-gold-500/10 rounded-lg">
+                <i data-lucide="wallet" class="h-6 w-6 text-gold-500 dark:text-gold-400"></i>
+              </div>
             </div>
             <p class="text-xs text-green-500 flex items-center mt-2"><i data-lucide="arrow-up" class="h-3 w-3 mr-1"></i> 12.5% vs last 30 days</p>
           </div>
+          <!-- Active Challenge Card -->
           <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Active Challenge</p>
                 <p class="text-xl font-bold mt-1"><%= (typeof user !== 'undefined' && user.activeChallenge) ? user.activeChallenge.name : 'No Active Challenge' %></p>
               </div>
-              <div class="p-2 bg-orange-100 dark:bg-orange-500/10 rounded-lg"> <i data-lucide="target" class="h-6 w-6 text-orange-500 dark:text-orange-400"></i> </div>
+              <div class="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-orange-100 dark:bg-orange-500/10 rounded-lg">
+                <i data-lucide="target" class="h-6 w-6 text-orange-500 dark:text-orange-400"></i>
+              </div>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2 dark:bg-gray-700">
-                <div class="bg-orange-500 h-1.5 rounded-full" style="width: <%= (typeof user !== 'undefined' && user.activeChallenge) ? user.activeChallenge.progress : 0 %>%"></div>
+              <div class="bg-orange-500 h-1.5 rounded-full" style="width: <%= (typeof user !== 'undefined' && user.activeChallenge) ? user.activeChallenge.progress : 0 %>%"></div>
             </div>
           </div>
+          <!-- Profit Share Card -->
           <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Profit Share</p>
                 <p class="text-3xl font-bold mt-1"><%= (typeof user !== 'undefined' && user.profitShare) ? user.profitShare : '0' %>%</p>
               </div>
-              <div class="p-2 bg-green-100 dark:bg-green-500/10 rounded-lg"> <i data-lucide="pie-chart" class="h-6 w-6 text-green-500 dark:text-green-400"></i> </div>
+              <div class="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-green-100 dark:bg-green-500/10 rounded-lg">
+                <i data-lucide="pie-chart" class="h-6 w-6 text-green-500 dark:text-green-400"></i>
+              </div>
             </div>
              <p class="text-xs text-slate-500 flex items-center mt-2">Eligible for next payout</p>
           </div>
+          <!-- Win Rate Card -->
           <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
             <div class="flex justify-between items-start">
               <div>
                 <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Win Rate</p>
                 <p class="text-3xl font-bold mt-1"><%= (typeof user !== 'undefined' && user.winRate) ? user.winRate : '0' %>%</p>
               </div>
-              <div class="p-2 bg-pink-100 dark:bg-pink-500/10 rounded-lg"> <i data-lucide="trending-up" class="h-6 w-6 text-pink-500 dark:text-pink-400"></i> </div>
+              <div class="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-pink-100 dark:bg-pink-500/10 rounded-lg">
+                <i data-lucide="trending-up" class="h-6 w-6 text-pink-500 dark:text-pink-400"></i>
+              </div>
             </div>
             <p class="text-xs text-green-500 flex items-center mt-2"><i data-lucide="arrow-up" class="h-3 w-3 mr-1"></i> 0.5% vs last 30 days</p>
           </div>
@@ -81,17 +102,17 @@
           <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
             <h2 class="text-lg font-semibold">Recent Activity</h2>
             <ul class="mt-4 space-y-4">
-              <% if (typeof user !== 'undefined' && user.recentActivity) { %>
+              <% if (typeof user !== 'undefined' && user.recentActivity && user.recentActivity.length > 0) { %>
                 <% user.recentActivity.forEach(activity => { %>
-                <li class="flex items-start">
-                  <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-<%= activity.color %>-100 dark:bg-<%= activity.color %>-500/10 rounded-full">
-                    <i data-lucide="<%= activity.icon %>" class="h-5 w-5 text-<%= activity.color %>-500"></i>
-                  </div>
-                  <div class="ml-3">
-                    <p class="text-sm"><%- activity.details %></p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400"><%= activity.time %></p>
-                  </div>
-                </li>
+                  <li class="flex items-start">
+                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-<%= activity.color %>-100 dark:bg-<%= activity.color %>-500/10 rounded-full">
+                      <i data-lucide="<%= activity.icon %>" class="h-5 w-5 text-<%= activity.color %>-500"></i>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm"><%- activity.details %></p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400"><%= activity.time %></p>
+                    </div>
+                  </li>
                 <% }); %>
               <% } else { %>
                 <li class="text-sm text-slate-500">No recent activity.</li>
@@ -99,12 +120,29 @@
             </ul>
           </div>
         </div>
+        
+        <!-- Tickets and Reports Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold">Open Support Tickets</h2>
+                    <span class="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-full">3 Active</span>
+                </div>
+                <p class="text-sm text-slate-500 mt-2">View your ongoing conversations with our support team.</p>
+                <button class="mt-4 w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-black">View Tickets</button>
+            </div>
+            <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
+                <h2 class="text-lg font-semibold">Submit P&L Report</h2>
+                <p class="text-sm text-slate-500 mt-2">Submit your daily profit and loss report for team review.</p>
+                <button class="mt-4 w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-gold-600 hover:bg-gold-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black">Submit Report</button>
+            </div>
+        </div>
 
         <!-- Data Table -->
         <div class="mt-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
-          <div class="p-6 flex justify-between items-center">
+          <div class="p-4 sm:p-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <h2 class="text-lg font-semibold">Transaction History</h2>
-            <button class="px-4 py-2 text-sm font-medium text-white bg-gold-600 hover:bg-gold-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black button-glow"> View All </button>
+            <button class="px-4 py-2 text-sm font-medium text-white bg-gold-600 hover:bg-gold-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black button-glow w-full sm:w-auto"> View All </button>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
@@ -112,29 +150,29 @@
                 <tr>
                   <th class="px-6 py-3 font-medium">Transaction ID</th>
                   <th class="px-6 py-3 font-medium">Type</th>
-                  <th class="px-6 py-3 font-medium">Date</th>
+                  <th class="px-6 py-3 font-medium hidden md:table-cell">Date</th>
                   <th class="px-6 py-3 font-medium">Amount</th>
                   <th class="px-6 py-3 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
-                <% if (typeof user !== 'undefined' && user.transactions) { %>
+                <% if (typeof user !== 'undefined' && user.transactions && user.transactions.length > 0) { %>
                   <% user.transactions.forEach(tx => { %>
-                  <tr class="border-b border-slate-200 dark:border-slate-800">
-                    <td class="px-6 py-4 font-mono text-gold-500"><%= tx.id %></td>
-                    <td class="px-6 py-4 font-semibold <%= tx.type === 'Deposit' ? 'text-green-500' : (tx.type === 'Payout' || tx.type === 'Withdrawal' ? 'text-blue-500' : 'text-slate-500') %>"><%= tx.type %></td>
-                    <td class="px-6 py-4"><%= tx.date %></td>
-                    <td class="px-6 py-4"><%= tx.amount %></td>
-                    <td class="px-6 py-4">
-                      <% if(tx.status === 'Completed') { %>
-                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-500/20 rounded-full"> <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5"></i> Completed </span>
-                      <% } else if(tx.status === 'Pending') { %>
-                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-500/20 rounded-full"> <i data-lucide="refresh-cw" class="w-4 h-4 mr-1.5 animate-spin" style="animation-duration: 2s;"></i> Pending </span>
-                      <% } else { %>
-                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-500/20 rounded-full"> <i data-lucide="x-circle" class="w-4 h-4 mr-1.5"></i> Failed </span>
-                      <% } %>
-                    </td>
-                  </tr>
+                    <tr class="border-b border-slate-200 dark:border-slate-800">
+                      <td class="px-6 py-4 font-mono text-gold-500 text-xs sm:text-sm"><%= tx.id %></td>
+                      <td class="px-6 py-4 font-semibold text-xs sm:text-sm <%= tx.type === 'Deposit' ? 'text-green-500' : (tx.type === 'Payout' || tx.type === 'Withdrawal' ? 'text-blue-500' : 'text-slate-500') %>"><%= tx.type %></td>
+                      <td class="px-6 py-4 hidden md:table-cell"><%= tx.date %></td>
+                      <td class="px-6 py-4 text-xs sm:text-sm"><%= tx.amount %></td>
+                      <td class="px-6 py-4">
+                        <% if(tx.status === 'Completed') { %>
+                          <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-500/20 rounded-full"> <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5"></i> Completed </span>
+                        <% } else if(tx.status === 'Pending') { %>
+                          <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-500/20 rounded-full"> <i data-lucide="refresh-cw" class="w-4 h-4 mr-1.5 animate-spin" style="animation-duration: 2s;"></i> Pending </span>
+                        <% } else { %>
+                          <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-500/20 rounded-full"> <i data-lucide="x-circle" class="w-4 h-4 mr-1.5"></i> Failed </span>
+                        <% } %>
+                      </td>
+                    </tr>
                   <% }); %>
                 <% } else { %>
                   <tr>
@@ -150,19 +188,18 @@
   </div>
 
   <script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
+    function initializeIcons() {
+        lucide.createIcons();
+    }
 
-    // --- Theme Toggler ---
     const themeToggle = document.getElementById('theme-toggle');
     const htmlEl = document.documentElement;
     themeToggle.addEventListener('click', () => {
       htmlEl.classList.toggle('dark');
       localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
-      renderChart(); // Re-render chart with new theme colors
+      renderChart();
     });
 
-    // --- Mobile Sidebar ---
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const sidebar = document.querySelector('aside');
     const sidebarCloseButton = document.getElementById('sidebar-close-button');
@@ -173,10 +210,10 @@
     sidebarCloseButton.addEventListener('click', closeSidebar);
     sidebarOverlay.addEventListener('click', closeSidebar);
 
-    // --- Chart.js Implementation ---
     let accountGrowthChart;
     const renderChart = () => {
       setTimeout(() => {
+        if (typeof Chart === 'undefined') return;
         const isDarkMode = document.documentElement.classList.contains('dark');
         const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
         const labelColor = isDarkMode ? '#cbd5e1' : '#475569';
@@ -185,7 +222,9 @@
         const tooltipBgColor = isDarkMode ? '#0f172a' : '#fff';
         const tooltipBorderColor = isDarkMode ? '#334155' : '#e2e8f0';
 
-        const ctx = document.getElementById('accountGrowthChart').getContext('2d');
+        const ctx = document.getElementById('accountGrowthChart')?.getContext('2d');
+        if (!ctx) return;
+        
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, isDarkMode ? 'rgba(250, 204, 21, 0.4)' : 'rgba(234, 179, 8, 0.7)');
         gradient.addColorStop(1, isDarkMode ? 'rgba(250, 204, 21, 0)' : 'rgba(234, 179, 8, 0.1)');
@@ -219,16 +258,6 @@
               borderWidth: 1, padding: 12, displayColors: false,
               callbacks: { label: (context) => `Balance: $${context.parsed.y.toLocaleString()}` }
             },
-            afterDraw: (chart) => {
-              if (isDarkMode) {
-                const ctx = chart.ctx;
-                ctx.save();
-                ctx.shadowColor = 'rgba(250, 204, 21, 0.5)';
-                ctx.shadowBlur = 20;
-                chart.draw();
-                ctx.restore();
-              }
-            }
           },
           interaction: { mode: 'index', intersect: false },
         };
@@ -237,7 +266,12 @@
         accountGrowthChart = new Chart(ctx, { type: 'line', data: chartData, options: chartOptions });
       }, 50);
     };
-    window.addEventListener('load', renderChart);
+
+    // --- Initial Load ---
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeIcons();
+        renderChart();
+    });
   </script>
 
 </body>

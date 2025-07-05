@@ -2,18 +2,25 @@
 <html lang="en" class="light">
 <head>
     <%- include('partials/head') %>
-    <link href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/css/flag-icons.min.css" rel="stylesheet">
+    <!-- Link for flag icons -->
+    <link href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" rel="stylesheet">
+    <style>
+        .rank-icon {
+            font-size: 1.75rem; /* Larger icon size */
+            line-height: 1;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200">
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 md:hidden hidden"></div>
     <div class="flex min-h-screen">
-        <%- include('partials/sidebar') %>
-        <div class="flex-1 md:ml-64">
-            <%- include('partials/header') %>
+        <%- include('partials/sidebar.ejs') %>
+        <div class="flex-1 md:ml-64 min-w-0">
+            <%- include('partials/header.ejs') %>
             <main class="pt-24 px-4 sm:px-6 lg:px-8 pb-8">
                 <!-- Header -->
                 <div>
-                    <h1 class="text-3xl font-bold">Top Traders Leaderboard</h1>
+                    <h1 class="text-2xl sm:text-3xl font-bold">Top Traders Leaderboard</h1>
                     <p class="mt-1 text-slate-500 dark:text-slate-400">See who's leading the pack with the highest payouts.</p>
                 </div>
 
@@ -24,27 +31,32 @@
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                                     <tr>
-                                        <th class="px-6 py-4 font-medium text-center">Rank</th>
+                                        <th class="px-6 py-4 font-medium text-center w-24">Rank</th>
                                         <th class="px-6 py-4 font-medium">Trader</th>
                                         <th class="px-6 py-4 font-medium text-right">Total Payout</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <% leaders.forEach(leader => { %>
-                                        <tr class="border-b border-slate-200 dark:border-slate-800 <%= leader.name === 'Hamza Crypto' ? 'bg-gold-50 dark:bg-gold-500/10' : '' %>">
+                                        <tr class="border-b border-slate-200 dark:border-slate-800">
                                             <td class="px-6 py-4 text-center">
-                                                <span class="font-bold text-lg <%= leader.rank <= 3 ? 'text-gold-500' : '' %>">
-                                                    <%= leader.rank %>
-                                                </span>
+                                                <% if (leader.rank === 1) { %>
+                                                    <span class="rank-icon">🥇</span>
+                                                <% } else if (leader.rank === 2) { %>
+                                                    <span class="rank-icon">🥈</span>
+                                                <% } else if (leader.rank === 3) { %>
+                                                    <span class="rank-icon">🥉</span>
+                                                <% } else { %>
+                                                    <span class="font-bold text-lg text-slate-600 dark:text-slate-300">
+                                                        <%= leader.rank %>
+                                                    </span>
+                                                <% } %>
                                             </td>
                                             <td class="px-6 py-4">
                                                 <div class="flex items-center">
-                                                    <span class="fi fi-<%= leader.country.toLowerCase() %> text-2xl rounded mr-4"></span>
+                                                    <span class="fi fi-<%= leader.country.toLowerCase() %> text-3xl rounded mr-4 shadow-md"></span>
                                                     <div>
                                                         <p class="font-semibold text-base"><%= leader.name %></p>
-                                                        <% if(leader.name === 'Hamza Crypto') { %>
-                                                            <p class="text-xs text-gold-600 dark:text-gold-400">This is you</p>
-                                                        <% } %>
                                                     </div>
                                                 </div>
                                             </td>
@@ -53,6 +65,33 @@
                                             </td>
                                         </tr>
                                     <% }); %>
+
+                                    <!-- Separator Row -->
+                                    <tr class="border-b border-slate-200 dark:border-slate-800">
+                                        <td colspan="3" class="text-center py-3 text-slate-400 dark:text-slate-600 tracking-widest">...</td>
+                                    </tr>
+
+                                    <!-- Current User Row -->
+                                    <tr class="bg-gold-50 dark:bg-gold-500/10 border-b border-gold-200 dark:border-gold-800">
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="font-bold text-lg text-slate-600 dark:text-slate-300">
+                                                <%= currentUser.rank %>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center">
+                                                <span class="fi fi-<%= currentUser.country.toLowerCase() %> text-3xl rounded mr-4 shadow-md"></span>
+                                                <div>
+                                                    <p class="font-semibold text-base"><%= currentUser.name %></p>
+                                                    <p class="text-xs font-bold text-gold-600 dark:text-gold-400">This is you</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <p class="font-bold text-lg text-green-500">$<%= currentUser.payout.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %></p>
+                                        </td>
+                                    </tr>
+
                                 </tbody>
                             </table>
                         </div>
@@ -61,95 +100,36 @@
             </main>
         </div>
     </div>
-  <script>
+<script>
     // Initialize Lucide Icons
-    lucide.createIcons();
+    // Assuming this is handled in your header.ejs partial, but if not, ensure it's called.
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 
     // --- Theme Toggler ---
     const themeToggle = document.getElementById('theme-toggle');
-    const htmlEl = document.documentElement;
-    themeToggle.addEventListener('click', () => {
-      htmlEl.classList.toggle('dark');
-      localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
-      renderChart(); // Re-render chart with new theme colors
-    });
+    if (themeToggle) {
+        const htmlEl = document.documentElement;
+        themeToggle.addEventListener('click', () => {
+            htmlEl.classList.toggle('dark');
+            localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
+        });
+    }
 
     // --- Mobile Sidebar ---
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const sidebar = document.querySelector('aside');
     const sidebarCloseButton = document.getElementById('sidebar-close-button');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
-    const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
-    mobileMenuButton.addEventListener('click', openSidebar);
-    sidebarCloseButton.addEventListener('click', closeSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
-
-    // --- Chart.js Implementation ---
-    let accountGrowthChart;
-    const renderChart = () => {
-      setTimeout(() => {
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        const labelColor = isDarkMode ? '#cbd5e1' : '#475569';
-        const goldColor = '#eab308';
-        const goldColorDark = '#facc15';
-        const tooltipBgColor = isDarkMode ? '#0f172a' : '#fff';
-        const tooltipBorderColor = isDarkMode ? '#334155' : '#e2e8f0';
-
-        const ctx = document.getElementById('accountGrowthChart').getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, isDarkMode ? 'rgba(250, 204, 21, 0.4)' : 'rgba(234, 179, 8, 0.7)');
-        gradient.addColorStop(1, isDarkMode ? 'rgba(250, 204, 21, 0)' : 'rgba(234, 179, 8, 0.1)');
-
-        const chartData = {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-          datasets: [{
-            label: 'Account Value',
-            data: [45000, 48000, 47000, 51000, 55000, 53000, 54329],
-            borderColor: isDarkMode ? goldColorDark : goldColor,
-            backgroundColor: gradient,
-            fill: true, tension: 0.4,
-            pointBackgroundColor: isDarkMode ? goldColorDark : goldColor,
-            pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: isDarkMode ? goldColorDark : goldColor,
-            pointRadius: 4, pointHoverRadius: 6,
-          }]
-        };
-
-        const chartOptions = {
-          responsive: true, maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: false, grid: { color: gridColor, drawBorder: false }, ticks: { color: labelColor, callback: (value) => '$' + value / 1000 + 'k' } },
-            x: { grid: { display: false }, ticks: { color: labelColor } }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: tooltipBgColor, titleColor: isDarkMode ? '#e2e8f0' : '#334155',
-              bodyColor: isDarkMode ? '#cbd5e1' : '#475569', borderColor: tooltipBorderColor,
-              borderWidth: 1, padding: 12, displayColors: false,
-              callbacks: { label: (context) => `Balance: $${context.parsed.y.toLocaleString()}` }
-            },
-            afterDraw: (chart) => {
-              if (isDarkMode) {
-                const ctx = chart.ctx;
-                ctx.save();
-                ctx.shadowColor = 'rgba(250, 204, 21, 0.5)';
-                ctx.shadowBlur = 20;
-                chart.draw();
-                ctx.restore();
-              }
-            }
-          },
-          interaction: { mode: 'index', intersect: false },
-        };
-
-        if (accountGrowthChart) accountGrowthChart.destroy();
-        accountGrowthChart = new Chart(ctx, { type: 'line', data: chartData, options: chartOptions });
-      }, 50);
-    };
-    window.addEventListener('load', renderChart);
-  </script>
+    
+    if (mobileMenuButton && sidebar && sidebarCloseButton && sidebarOverlay) {
+        const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+        const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+        mobileMenuButton.addEventListener('click', openSidebar);
+        sidebarCloseButton.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+</script>
 </body>
 </html>

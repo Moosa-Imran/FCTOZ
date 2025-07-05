@@ -114,72 +114,7 @@
     mobileMenuButton.addEventListener('click', openSidebar);
     sidebarCloseButton.addEventListener('click', closeSidebar);
     sidebarOverlay.addEventListener('click', closeSidebar);
-
-    // --- Chart.js Implementation ---
-    let accountGrowthChart;
-    const renderChart = () => {
-      setTimeout(() => {
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        const labelColor = isDarkMode ? '#cbd5e1' : '#475569';
-        const goldColor = '#eab308';
-        const goldColorDark = '#facc15';
-        const tooltipBgColor = isDarkMode ? '#0f172a' : '#fff';
-        const tooltipBorderColor = isDarkMode ? '#334155' : '#e2e8f0';
-
-        const ctx = document.getElementById('accountGrowthChart').getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, isDarkMode ? 'rgba(250, 204, 21, 0.4)' : 'rgba(234, 179, 8, 0.7)');
-        gradient.addColorStop(1, isDarkMode ? 'rgba(250, 204, 21, 0)' : 'rgba(234, 179, 8, 0.1)');
-
-        const chartData = {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-          datasets: [{
-            label: 'Account Value',
-            data: [45000, 48000, 47000, 51000, 55000, 53000, 54329],
-            borderColor: isDarkMode ? goldColorDark : goldColor,
-            backgroundColor: gradient,
-            fill: true, tension: 0.4,
-            pointBackgroundColor: isDarkMode ? goldColorDark : goldColor,
-            pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: isDarkMode ? goldColorDark : goldColor,
-            pointRadius: 4, pointHoverRadius: 6,
-          }]
-        };
-
-        const chartOptions = {
-          responsive: true, maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: false, grid: { color: gridColor, drawBorder: false }, ticks: { color: labelColor, callback: (value) => '$' + value / 1000 + 'k' } },
-            x: { grid: { display: false }, ticks: { color: labelColor } }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: tooltipBgColor, titleColor: isDarkMode ? '#e2e8f0' : '#334155',
-              bodyColor: isDarkMode ? '#cbd5e1' : '#475569', borderColor: tooltipBorderColor,
-              borderWidth: 1, padding: 12, displayColors: false,
-              callbacks: { label: (context) => `Balance: $${context.parsed.y.toLocaleString()}` }
-            },
-            afterDraw: (chart) => {
-              if (isDarkMode) {
-                const ctx = chart.ctx;
-                ctx.save();
-                ctx.shadowColor = 'rgba(250, 204, 21, 0.5)';
-                ctx.shadowBlur = 20;
-                chart.draw();
-                ctx.restore();
-              }
-            }
-          },
-          interaction: { mode: 'index', intersect: false },
-        };
-
-        if (accountGrowthChart) accountGrowthChart.destroy();
-        accountGrowthChart = new Chart(ctx, { type: 'line', data: chartData, options: chartOptions });
-      }, 50);
-    };
-    window.addEventListener('load', renderChart);
+    
   </script>
 
 </body>

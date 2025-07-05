@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <%- include('partials/head') %>
+    <style>
+        .challenge-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .challenge-card.selected {
+            transform: translateY(-5px) scale(1.02);
+            border-color: #eab308;
+            box-shadow: 0 10px 30px -10px rgba(234, 179, 8, 0.3);
+        }
+        .dark .challenge-card.selected {
+             border-color: #eab308;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200">
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 md:hidden hidden"></div>
+    <div class="flex min-h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        <div class="flex-1 md:ml-64 min-w-0">
+            <%- include('partials/header.ejs') %>
+            
+            <main class="pt-24 px-4 sm:px-6 lg:px-8 pb-8">
+                <!-- Header -->
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Start a New Challenge</h1>
+                    <p class="mt-1 text-slate-500 dark:text-slate-400">Choose your account size and begin your journey to becoming a funded trader.</p>
+                </div>
+
+                <div class="mt-8 grid lg:grid-cols-3 gap-8">
+                    <!-- Challenge Selection -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <% plans.forEach(plan => { %>
+                        <div id="plan-card-<%= plan.id %>" class="challenge-card relative bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6" data-plan-id="<%= plan.id %>" data-plan-name="$<%= plan.size.toLocaleString() %> Challenge" data-plan-price="<%= plan.price %>">
+                            <% if(plan.popular) { %>
+                                <div class="absolute top-0 right-6 -translate-y-1/2">
+                                    <span class="px-3 py-1 text-xs font-semibold text-gray-950 bg-gold-400 rounded-full">MOST POPULAR</span>
+                                </div>
+                            <% } %>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                                <div>
+                                    <h3 class="text-2xl font-bold text-slate-800 dark:text-white">$<%= plan.size.toLocaleString() %> Account</h3>
+                                    <p class="text-slate-500 dark:text-slate-400">Standard Challenge</p>
+                                </div>
+                                <p class="text-4xl font-extrabold text-gold-500 mt-4 sm:mt-0">$<%= plan.price %></p>
+                            </div>
+                            <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                    <p class="text-slate-500">Profit Target</p>
+                                    <p class="font-semibold text-slate-700 dark:text-white"><%= plan.target %>%</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500">Max Loss</p>
+                                    <p class="font-semibold text-slate-700 dark:text-white"><%= plan.maxLoss %>%</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500">Daily Loss</p>
+                                    <p class="font-semibold text-slate-700 dark:text-white"><%= plan.dailyLoss %>%</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500">Profit Split</p>
+                                    <p class="font-semibold text-slate-700 dark:text-white">Up to 90%</p>
+                                </div>
+                            </div>
+                             <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+                                <button class="w-full sm:w-auto start-challenge-btn px-6 py-3 font-semibold text-gray-950 bg-gold-500 hover:bg-gold-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black transition">
+                                    Start This Challenge
+                                </button>
+                            </div>
+                        </div>
+                        <% }); %>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="lg:col-span-1">
+                        <div class="sticky top-24 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+                            <h3 class="text-xl font-bold text-slate-800 dark:text-white">Order Summary</h3>
+                            
+                            <div id="summary-empty" class="text-center py-12 text-slate-500">
+                                <i data-lucide="mouse-pointer-square" class="mx-auto h-12 w-12"></i>
+                                <p class="mt-2">Select a plan to continue.</p>
+                            </div>
+
+                            <div id="summary-details" class="hidden">
+                                <div class="mt-6 space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-slate-500 dark:text-slate-400">Selected Plan:</p>
+                                        <p id="summary-plan-name" class="font-semibold text-slate-700 dark:text-white"></p>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-slate-500 dark:text-slate-400">One-time Fee:</p>
+                                        <p id="summary-plan-price" class="font-semibold text-slate-700 dark:text-white"></p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+                                    <label for="discount-code" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Discount Code</label>
+                                    <div class="mt-1 flex">
+                                        <input type="text" id="discount-code" placeholder="Enter code" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-l-lg px-4 py-2 text-slate-800 dark:text-white focus:ring-1 focus:ring-gold-500 focus:border-gold-500 transition">
+                                        <button class="px-4 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-r-lg hover:bg-slate-300 dark:hover:bg-slate-600 font-semibold text-sm">Apply</button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                                    <div class="flex justify-between items-center text-lg">
+                                        <p class="text-slate-600 dark:text-slate-300 font-semibold">Total:</p>
+                                        <p id="summary-total" class="font-bold text-gold-500"></p>
+                                    </div>
+                                    <button class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm font-bold text-gray-950 bg-gold-500 hover:bg-gold-600 transition">
+                                        Proceed to Payment
+                                    </button>
+                                </div>
+                                <p class="mt-4 text-xs text-slate-500 text-center">Your fee is fully refundable with your first payout.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            const challengeCards = document.querySelectorAll('.challenge-card');
+            const summaryEmpty = document.getElementById('summary-empty');
+            const summaryDetails = document.getElementById('summary-details');
+            const summaryPlanName = document.getElementById('summary-plan-name');
+            const summaryPlanPrice = document.getElementById('summary-plan-price');
+            const summaryTotal = document.getElementById('summary-total');
+
+            function selectPlan(card) {
+                // Remove selected state from all cards
+                challengeCards.forEach(c => c.classList.remove('selected'));
+                // Add selected state to the clicked card
+                card.classList.add('selected');
+
+                const planName = card.dataset.planName;
+                const planPrice = parseFloat(card.dataset.planPrice);
+
+                // Update summary
+                summaryPlanName.textContent = planName;
+                summaryPlanPrice.textContent = `$${planPrice.toFixed(2)}`;
+                summaryTotal.textContent = `$${planPrice.toFixed(2)}`;
+
+                // Show details, hide empty state
+                summaryEmpty.classList.add('hidden');
+                summaryDetails.classList.remove('hidden');
+            }
+
+            challengeCards.forEach(card => {
+                card.querySelector('.start-challenge-btn').addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent card click event from firing again
+                    selectPlan(card);
+                });
+                 card.addEventListener('click', () => {
+                    selectPlan(card);
+                });
+            });
+
+            // Sidebar and Theme toggler logic from your other pages
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const sidebar = document.querySelector('aside');
+            const sidebarCloseButton = document.getElementById('sidebar-close-button');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            
+            if (mobileMenuButton && sidebar && sidebarCloseButton && sidebarOverlay) {
+                const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+                const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+                mobileMenuButton.addEventListener('click', openSidebar);
+                sidebarCloseButton.addEventListener('click', closeSidebar);
+                sidebarOverlay.addEventListener('click', closeSidebar);
+            }
+
+            const themeToggle = document.getElementById('theme-toggle');
+            if(themeToggle) {
+                const htmlEl = document.documentElement;
+                themeToggle.addEventListener('click', () => {
+                    htmlEl.classList.toggle('dark');
+                    localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
