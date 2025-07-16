@@ -3,7 +3,17 @@
 <head>
     <%- include('partials/head.ejs') %>
     <style>
-        /* Custom styles for file input */
+        .report-type-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        }
+        .report-type-card.selected {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px -5px var(--tw-shadow-color);
+            border-color: var(--tw-shadow-color);
+        }
+        .report-type-card.selected.profit { --tw-shadow-color: rgba(34, 197, 94, 0.4); }
+        .report-type-card.selected.loss { --tw-shadow-color: rgba(239, 68, 68, 0.4); }
+        .report-type-card.selected.no-gain { --tw-shadow-color: rgba(107, 114, 128, 0.4); }
         .file-drop-zone {
             transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
         }
@@ -35,43 +45,73 @@
                     <h2 class="text-lg font-semibold">Submit Today's Report</h2>
                     <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Submissions are reviewed by the team. We may request further details.</p>
                     
-                    <form class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <!-- P&L Amount -->
+                    <form id="pnl-form" action="/reports/submit" method="POST" enctype="multipart/form-data" class="mt-6 space-y-6">
+                        <!-- Step 1: Report Type -->
                         <div>
-                            <label for="pnl-amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Profit / Loss Amount (USD)</label>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">1. Select Report Type</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <!-- Profit Card -->
+                                <div class="report-type-card profit cursor-pointer p-4 rounded-lg bg-slate-100 dark:bg-slate-800 border-2 border-transparent text-center" data-type="profit">
+                                    <i data-lucide="trending-up" class="mx-auto h-10 w-10 text-green-500"></i>
+                                    <p class="mt-2 font-bold text-lg">Profit</p>
+                                </div>
+                                <!-- Loss Card -->
+                                <div class="report-type-card loss cursor-pointer p-4 rounded-lg bg-slate-100 dark:bg-slate-800 border-2 border-transparent text-center" data-type="loss">
+                                    <i data-lucide="trending-down" class="mx-auto h-10 w-10 text-red-500"></i>
+                                    <p class="mt-2 font-bold text-lg">Loss</p>
+                                </div>
+                                <!-- No Gain/Loss Card -->
+                                <div class="report-type-card no-gain cursor-pointer p-4 rounded-lg bg-slate-100 dark:bg-slate-800 border-2 border-transparent text-center" data-type="no-gain">
+                                    <i data-lucide="minus" class="mx-auto h-10 w-10 text-slate-500"></i>
+                                    <p class="mt-2 font-bold text-lg">No Gain/Loss</p>
+                                </div>
+                            </div>
+                            <input type="hidden" name="reportType" id="reportType" required>
+                        </div>
+                        
+                        <!-- Step 2: Amount (Conditional) -->
+                        <div id="pnl-amount-container" class="hidden">
+                            <label for="pnl-amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300">2. Enter Amount (USD)</label>
                             <div class="relative mt-1">
-                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">$</span>
-                                <input type="number" name="pnl-amount" id="pnl-amount" class="w-full pl-7 pr-4 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-gold-500 focus:ring-gold-500 rounded-lg" placeholder="e.g., 450.25 or -150.80">
+                                <span id="amount-prefix" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 font-semibold"></span>
+                                <input type="number" step="0.01" name="pnlAmount" id="pnl-amount" class="w-full pl-7 pr-4 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-gold-500 focus:ring-gold-500 rounded-lg" placeholder="0.00">
                             </div>
                         </div>
 
-                        <!-- Challenge Account -->
+                        <!-- Step 3: Challenge Account -->
                         <div>
-                            <label for="challenge-account" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Challenge Account</label>
-                            <select id="challenge-account" name="challenge-account" class="mt-1 block w-full py-2 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm focus:outline-none focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
-                                <option>Select an account...</option>
-                                <option value="50k-aggressive">FCTZ-CHAL-1A2B3C ($50k Aggressive)</option>
-                                <option value="25k-standard">FCTZ-CHAL-4D5E6F ($25k Standard)</option>
-                                <option value="100k-pro">FCTZ-CHAL-7G8H9I ($100k Pro)</option>
+                            <label for="challenge-account" class="block text-sm font-medium text-slate-700 dark:text-slate-300">3. Select Challenge Account</label>
+                            <select id="challenge-account" name="challengeId" required class="mt-1 block w-full py-2 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 rounded-lg shadow-sm focus:outline-none focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
+                                <option value="">Select an active challenge...</option>
+                                <% if (activeChallenges && activeChallenges.length > 0) { %>
+                                    <% activeChallenges.forEach(challenge => { %>
+                                        <option value="<%= challenge._id %>"><%= challenge.challengeId %> (<%= challenge.planDetails.name %>)</option>
+                                    <% }); %>
+                                <% } else { %>
+                                    <option value="" disabled>No active challenges found.</option>
+                                <% } %>
                             </select>
+                            <% if (!activeChallenges || activeChallenges.length === 0) { %>
+                                <a href="/new-challenge" class="mt-2 inline-block text-sm text-gold-600 hover:text-gold-500">Click here to start a new challenge!</a>
+                            <% } %>
                         </div>
 
-                        <!-- Notes/Comments -->
-                        <div class="md:col-span-2">
-                            <label for="notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Notes / Comments (Optional)</label>
+                        <!-- Step 4: Notes/Comments -->
+                        <div>
+                            <label for="notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300">4. Notes / Comments (Optional)</label>
                             <textarea id="notes" name="notes" rows="3" class="mt-1 block w-full text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-gold-500 focus:ring-gold-500 rounded-lg" placeholder="e.g., 'High volatility during the London session led to this result.'"></textarea>
                         </div>
 
-                        <!-- Screenshot Upload -->
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Upload Screenshot</label>
+                        <!-- Step 5: Screenshot Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">5. Upload Screenshot (Required)</label>
                             <div id="file-drop-zone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-lg file-drop-zone">
                                 <div id="upload-prompt" class="space-y-1 text-center">
                                     <i data-lucide="image" class="mx-auto h-12 w-12 text-slate-400"></i>
                                     <div class="flex text-sm text-slate-600 dark:text-slate-400">
                                         <label for="file-upload" class="relative cursor-pointer bg-transparent rounded-md font-medium text-gold-600 hover:text-gold-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-gold-500">
                                             <span>Upload a file</span>
-                                            <input id="file-upload" name="file-upload" type="file" class="sr-only" accept="image/png, image/jpeg, image/gif">
+                                            <input id="file-upload" name="pnl-screenshot" type="file" class="sr-only" accept="image/png, image/jpeg, image/gif" required>
                                         </label>
                                         <p class="pl-1">or drag and drop</p>
                                     </div>
@@ -88,7 +128,7 @@
 
                         <!-- Submit Button -->
                         <div class="md:col-span-2 flex justify-end">
-                            <button type="submit" class="w-full md:w-auto px-6 py-3 font-semibold text-white bg-gold-600 hover:bg-gold-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black button-glow flex items-center justify-center">
+                            <button type="button" id="submit-btn" class="w-full md:w-auto px-6 py-3 font-semibold text-white bg-gold-600 hover:bg-gold-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black button-glow flex items-center justify-center">
                                 <i data-lucide="send" class="h-5 w-5 mr-2"></i> Submit for Review
                             </button>
                         </div>
@@ -106,29 +146,34 @@
                                         <th class="px-6 py-3 font-medium">Date</th>
                                         <th class="px-6 py-3 font-medium">Submitted P&L</th>
                                         <th class="px-6 py-3 font-medium">Status</th>
-                                        <th class="px-6 py-3 font-medium">Admin Remarks</th>
+                                        <th class="px-6 py-3 font-medium">Broker Remarks</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% const reports = { submissions: [ { date: 'Jul 4, 2025', submittedPL: 450.25, status: 'Approved', remarks: 'Good risk management.' }, { date: 'Jul 3, 2025', submittedPL: -150.80, status: 'Approved', remarks: 'Market was choppy.' }, { date: 'Jul 2, 2025', submittedPL: 1250.00, status: 'Rejected', remarks: 'P&L does not match broker statement. Please verify.' }, { date: 'Jul 1, 2025', submittedPL: 85.50, status: 'Pending', remarks: '...' } ] }; %>
-                                    <% reports.submissions.forEach(sub => { %>
-                                        <tr class="border-b border-slate-200 dark:border-slate-800">
-                                            <td class="px-6 py-4 whitespace-nowrap"><%= sub.date %></td>
-                                            <td class="px-6 py-4 font-semibold <%= sub.submittedPL >= 0 ? 'text-green-500' : 'text-red-500' %>">
-                                                <%= sub.submittedPL >= 0 ? '+' : '' %>$<%= Math.abs(sub.submittedPL).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <% if(sub.status === 'Approved') { %>
-                                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-500/20 rounded-full"> <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5"></i> Approved </span>
-                                                <% } else if(sub.status === 'Pending') { %>
-                                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-500/20 rounded-full"> <i data-lucide="refresh-cw" class="w-4 h-4 mr-1.5"></i> Pending </span>
-                                                <% } else { %>
-                                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-500/20 rounded-full"> <i data-lucide="x-circle" class="w-4 h-4 mr-1.5"></i> Rejected </span>
-                                                <% } %>
-                                            </td>
-                                            <td class="px-6 py-4 text-slate-500 dark:text-slate-400 italic"><%= sub.remarks || '...' %></td>
+                                    <% if (reports && reports.length > 0) { %>
+                                        <% reports.forEach(sub => { %>
+                                            <tr class="border-b border-slate-200 dark:border-slate-800">
+                                                <td class="px-6 py-4 whitespace-nowrap"><%= new Date(sub.createdAt).toLocaleDateString() %></td>
+                                                <td class="px-6 py-4 font-semibold <%= sub.pnlAmount >= 0 ? 'text-green-500' : 'text-red-500' %>">
+                                                    <%= sub.pnlAmount >= 0 ? '+' : '' %>$<%= Math.abs(sub.pnlAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <% if(sub.status === 'approved') { %>
+                                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-500/20 rounded-full"> <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5"></i> Approved </span>
+                                                    <% } else if(sub.status === 'pending') { %>
+                                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-500/20 rounded-full"> <i data-lucide="refresh-cw" class="w-4 h-4 mr-1.5 animate-spin"></i> Pending </span>
+                                                    <% } else { %>
+                                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-500/20 rounded-full"> <i data-lucide="x-circle" class="w-4 h-4 mr-1.5"></i> Rejected </span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 text-slate-500 dark:text-slate-400 italic"><%= sub.remarks || '...' %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="4" class="text-center py-10 text-slate-500">No submission history found.</td>
                                         </tr>
-                                    <% }); %>
+                                    <% } %>
                                 </tbody>
                             </table>
                         </div>
@@ -138,87 +183,120 @@
         </div>
     </div>
     
-<script>
-
-    // Initialize Lucide Icons
-    lucide.createIcons();
-
-    // --- Theme Toggler ---
-    const themeToggle = document.getElementById('theme-toggle');
-    const htmlEl = document.documentElement;
-    themeToggle.addEventListener('click', () => {
-      htmlEl.classList.toggle('dark');
-      localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
-      renderChart(); // Re-render chart with new theme colors
-    });
-
-    // --- Mobile Sidebar ---
-    const mobileMenuButton = document.getElementById('mobile-menu-button');
-    const sidebar = document.querySelector('aside');
-    const sidebarCloseButton = document.getElementById('sidebar-close-button');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
-    const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
-    mobileMenuButton.addEventListener('click', openSidebar);
-    sidebarCloseButton.addEventListener('click', closeSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md p-6 text-center">
+            <i data-lucide="alert-triangle" class="mx-auto h-16 w-16 text-amber-500"></i>
+            <h3 class="mt-4 text-xl font-bold">Confirm Submission</h3>
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Are you sure you want to submit this report? This action cannot be undone.</p>
+            <div class="mt-6 flex justify-center gap-4">
+                <button id="cancel-btn" type="button" class="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold">Cancel</button>
+                <button id="confirm-submit-btn" type="button" class="px-6 py-2 rounded-lg bg-gold-600 text-white font-semibold">Yes, Submit</button>
+            </div>
+        </div>
+    </div>
     
-    // --- File Upload Logic ---
-    const dropZone = document.getElementById('file-drop-zone');
-    const fileInput = document.getElementById('file-upload');
-    const uploadPrompt = document.getElementById('upload-prompt');
-    const previewContainer = document.getElementById('image-preview-container');
-    const imagePreview = document.getElementById('image-preview');
-    const removeImageBtn = document.getElementById('remove-image-btn');
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
 
-    const showPreview = (file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            imagePreview.src = e.target.result;
-            uploadPrompt.classList.add('hidden');
-            previewContainer.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    };
+        // --- Sidebar & Theme ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlEl = document.documentElement;
+        themeToggle.addEventListener('click', () => { htmlEl.classList.toggle('dark'); localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light'); });
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const sidebar = document.querySelector('aside');
+        const sidebarCloseButton = document.getElementById('sidebar-close-button');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+        const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+        mobileMenuButton.addEventListener('click', openSidebar);
+        sidebarCloseButton.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+        
+        // --- Form Logic ---
+        const pnlForm = document.getElementById('pnl-form');
+        const reportTypeCards = document.querySelectorAll('.report-type-card');
+        const reportTypeInput = document.getElementById('reportType');
+        const pnlAmountContainer = document.getElementById('pnl-amount-container');
+        const pnlAmountInput = document.getElementById('pnl-amount');
+        const amountPrefix = document.getElementById('amount-prefix');
 
-    const resetUpload = () => {
-        fileInput.value = ''; // Clear the file input
-        imagePreview.src = '#';
-        uploadPrompt.classList.remove('hidden');
-        previewContainer.classList.add('hidden');
-    };
+        reportTypeCards.forEach(card => {
+            card.addEventListener('click', () => {
+                reportTypeCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                const type = card.dataset.type;
+                reportTypeInput.value = type;
+                pnlAmountInput.value = ''; // Reset amount on type change
 
-    // Event Listeners for Drag and Drop
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('drag-over');
+                if (type === 'no-gain') {
+                    pnlAmountContainer.classList.add('hidden');
+                    pnlAmountInput.required = false;
+                } else {
+                    pnlAmountContainer.classList.remove('hidden');
+                    pnlAmountInput.required = true;
+                    if (type === 'profit') {
+                        amountPrefix.textContent = '+$';
+                        amountPrefix.className = 'pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 font-semibold text-green-500';
+                    } else if (type === 'loss') {
+                        amountPrefix.textContent = '-$';
+                        amountPrefix.className = 'pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 font-semibold text-red-500';
+                    }
+                }
+            });
+        });
+        
+        pnlAmountInput.addEventListener('input', () => {
+            const type = reportTypeInput.value;
+            let value = parseFloat(pnlAmountInput.value);
+            if (isNaN(value)) return;
+
+            if (type === 'loss') {
+                pnlAmountInput.value = -Math.abs(value);
+            } else {
+                pnlAmountInput.value = Math.abs(value);
+            }
+        });
+
+        // --- File Upload Logic ---
+        const dropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-upload');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const previewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const removeImageBtn = document.getElementById('remove-image-btn');
+        const showPreview = (file) => { const reader = new FileReader(); reader.onload = (e) => { imagePreview.src = e.target.result; uploadPrompt.classList.add('hidden'); previewContainer.classList.remove('hidden'); }; reader.readAsDataURL(file); };
+        const resetUpload = () => { fileInput.value = ''; imagePreview.src = '#'; uploadPrompt.classList.remove('hidden'); previewContainer.classList.add('hidden'); };
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-over'); });
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); const files = e.dataTransfer.files; if (files.length > 0) { fileInput.files = files; showPreview(files[0]); } });
+        fileInput.addEventListener('change', (e) => { const files = e.target.files; if (files.length > 0) { showPreview(files[0]); } });
+        removeImageBtn.addEventListener('click', resetUpload);
+
+        // --- Confirmation Modal Logic ---
+        const submitBtn = document.getElementById('submit-btn');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+
+        submitBtn.addEventListener('click', (e) => {
+            if (pnlForm.checkValidity()) {
+                e.preventDefault(); // Prevent form submission
+                confirmationModal.classList.remove('hidden');
+            } else {
+                pnlForm.reportValidity(); // Show native validation errors
+            }
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            confirmationModal.classList.add('hidden');
+        });
+
+        confirmSubmitBtn.addEventListener('click', () => {
+            pnlForm.submit();
+        });
     });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('drag-over');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drag-over');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            fileInput.files = files;
-            showPreview(files[0]);
-        }
-    });
-
-    // Event Listener for File Input Change
-    fileInput.addEventListener('change', (e) => {
-        const files = e.target.files;
-        if (files.length > 0) {
-            showPreview(files[0]);
-        }
-    });
-
-    // Event Listener for Remove Image Button
-    removeImageBtn.addEventListener('click', resetUpload);
-
 </script>
 </body>
 </html>

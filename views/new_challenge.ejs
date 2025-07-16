@@ -5,18 +5,26 @@
     <style>
         .challenge-card {
             transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            background-size: 200% 200%;
+            animation: gradient-animation 10s ease infinite;
         }
         .challenge-card.selected {
-            transform: translateY(-5px) scale(1.02);
-            border-color: #eab308;
-            box-shadow: 0 10px 30px -10px rgba(234, 179, 8, 0.3);
+            transform: translateY(-8px) scale(1.02);
+            border-color: #facc15; /* Brighter gold for selected */
+            box-shadow: 0 15px 40px -15px rgba(234, 179, 8, 0.4);
         }
         .dark .challenge-card.selected {
-             border-color: #eab308;
+             border-color: #facc15;
+             box-shadow: 0 15px 40px -15px rgba(250, 204, 21, 0.3);
+        }
+
+        .popular-badge {
+            background: linear-gradient(45deg, #fde047, #eab308);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200">
+<body class="bg-slate-100 dark:bg-black text-slate-800 dark:text-slate-200">
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 md:hidden hidden"></div>
     <div class="flex min-h-screen">
         <%- include('partials/sidebar.ejs') %>
@@ -32,50 +40,107 @@
 
                 <div class="mt-8 grid lg:grid-cols-3 gap-8">
                     <!-- Challenge Selection -->
-                    <div class="lg:col-span-2 space-y-6">
-                        <% plans.forEach(plan => { %>
-                        <div id="plan-card-<%= plan.id %>" class="challenge-card relative bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6" data-plan-id="<%= plan.id %>" data-plan-name="$<%= plan.size.toLocaleString() %> Challenge" data-plan-price="<%= plan.price %>">
-                            <% if(plan.popular) { %>
-                                <div class="absolute top-0 right-6 -translate-y-1/2">
-                                    <span class="px-3 py-1 text-xs font-semibold text-gray-950 bg-gold-400 rounded-full">MOST POPULAR</span>
+                    <div class="lg:col-span-2 space-y-8">
+                        <% if (plans && plans.length > 0) { %>
+                            <% plans.forEach(plan => { %>
+                            <div id="plan-card-<%= plan._id %>" class="challenge-card relative bg-white dark:bg-slate-900/70 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-2xl p-6 cursor-pointer mt-4" data-plan-id="<%= plan._id %>" data-plan-name="<%= plan.name %>" data-plan-price="<%= plan.price %>">
+                                <% if(plan.popular) { %>
+                                    <div class="absolute top-[-14px] right-6">
+                                        <span class="popular-badge px-4 py-1.5 text-xs font-bold text-gray-950 rounded-full shadow-lg">MOST POPULAR</span>
+                                    </div>
+                                <% } %>
+                                
+                                <!-- Card Header -->
+                                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                                    <div>
+                                        <h3 class="text-2xl font-bold text-slate-800 dark:text-white"><%= plan.name %></h3>
+                                        <p class="text-slate-500 dark:text-slate-400">$<%= plan.accountSize.toLocaleString() %> Account</p>
+                                    </div>
+                                    <p class="text-4xl font-extrabold text-gold-500 mt-4 sm:mt-0">$<%= plan.price %></p>
                                 </div>
-                            <% } %>
-                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                                <div>
-                                    <h3 class="text-2xl font-bold text-slate-800 dark:text-white">$<%= plan.size.toLocaleString() %> Account</h3>
-                                    <p class="text-slate-500 dark:text-slate-400">Standard Challenge</p>
+                                
+                                <!-- Divider -->
+                                <div class="my-6 h-px bg-slate-200 dark:bg-slate-800"></div>
+
+                                <!-- Plan Details Grid -->
+                                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                                    <!-- Daily Profit Target -->
+                                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                        <i data-lucide="sun" class="w-5 h-5 text-yellow-500 flex-shrink-0"></i>
+                                        <div>
+                                            <p class="text-xs text-slate-500">Daily Profit Target</p>
+                                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200"><%= plan.profitTarget %>%</p>
+                                        </div>
+                                    </div>
+                                    <!-- Total Profit Target -->
+                                    <% const totalProfitTarget = (plan.profitTarget * plan.minTradingDays / 100) * plan.accountSize; %>
+                                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                        <i data-lucide="target" class="w-5 h-5 text-gold-500 flex-shrink-0"></i>
+                                        <div>
+                                            <p class="text-xs text-slate-500">Total Profit Target</p>
+                                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200">$<%= totalProfitTarget.toLocaleString() %></p>
+                                        </div>
+                                    </div>
+                                    <!-- Daily Loss -->
+                                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                        <i data-lucide="shield-alert" class="w-5 h-5 text-orange-500 flex-shrink-0"></i>
+                                        <div>
+                                            <p class="text-xs text-slate-500">Daily Loss</p>
+                                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200"><%= plan.dailyLoss %>%</p>
+                                        </div>
+                                    </div>
+                                    <!-- Time Limit -->
+                                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                        <i data-lucide="calendar-clock" class="w-5 h-5 text-blue-500 flex-shrink-0"></i>
+                                        <div>
+                                            <p class="text-xs text-slate-500">Time Limit</p>
+                                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200"><%= plan.timeLimit %></p>
+                                        </div>
+                                    </div>
+                                    <!-- Min Trading Days -->
+                                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                        <i data-lucide="calendar-check" class="w-5 h-5 text-indigo-500 flex-shrink-0"></i>
+                                        <div>
+                                            <p class="text-xs text-slate-500">Min Trading Days</p>
+                                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200"><%= plan.minTradingDays %> Days</p>
+                                        </div>
+                                    </div>
+                                    <!-- Profit Split -->
+                                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                        <i data-lucide="pie-chart" class="w-5 h-5 text-pink-500 flex-shrink-0"></i>
+                                        <div>
+                                            <p class="text-xs text-slate-500">Profit Split</p>
+                                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200"><%= plan.profitSplit %></p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="text-4xl font-extrabold text-gold-500 mt-4 sm:mt-0">$<%= plan.price %></p>
+
+                                 <!-- Payout & Button -->
+                                 <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                     <div class="flex items-center gap-3">
+                                        <i data-lucide="award" class="w-8 h-8 text-green-500"></i>
+                                        <div>
+                                            <p class="text-sm text-slate-500">Refundable Fee + First Payout</p>
+                                            <p class="text-xl font-bold text-green-600 dark:text-green-400">$<%= plan.payout.toLocaleString() %></p>
+                                        </div>
+                                     </div>
+                                     <button class="w-full sm:w-auto start-challenge-btn px-6 py-3 font-semibold text-gray-950 bg-gold-500 hover:bg-gold-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black transition shadow-lg hover:shadow-xl button-glow">
+                                         Select This Challenge
+                                     </button>
+                                 </div>
                             </div>
-                            <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                    <p class="text-slate-500">Profit Target</p>
-                                    <p class="font-semibold text-slate-700 dark:text-white"><%= plan.target %>%</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-500">Max Loss</p>
-                                    <p class="font-semibold text-slate-700 dark:text-white"><%= plan.maxLoss %>%</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-500">Daily Loss</p>
-                                    <p class="font-semibold text-slate-700 dark:text-white"><%= plan.dailyLoss %>%</p>
-                                </div>
-                                <div>
-                                    <p class="text-slate-500">Profit Split</p>
-                                    <p class="font-semibold text-slate-700 dark:text-white">Up to 90%</p>
-                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="text-center py-12 text-slate-500 bg-white dark:bg-slate-900/50 rounded-2xl">
+                                <i data-lucide="server-off" class="mx-auto h-12 w-12"></i>
+                                <p class="mt-2 font-semibold">No challenges available right now.</p>
+                                <p class="text-sm">Please check back later or contact support.</p>
                             </div>
-                             <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-                                <button class="w-full sm:w-auto start-challenge-btn px-6 py-3 font-semibold text-gray-950 bg-gold-500 hover:bg-gold-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black transition">
-                                    Start This Challenge
-                                </button>
-                            </div>
-                        </div>
-                        <% }); %>
+                        <% } %>
                     </div>
 
                     <!-- Payment Summary -->
-                    <div class="lg:col-span-1">
+                    <div class="lg:col-span-1" id="order-summary-box">
                         <div class="sticky top-24 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
                             <h3 class="text-xl font-bold text-slate-800 dark:text-white">Order Summary</h3>
                             
@@ -85,34 +150,36 @@
                             </div>
 
                             <div id="summary-details" class="hidden">
-                                <div class="mt-6 space-y-4">
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-slate-500 dark:text-slate-400">Selected Plan:</p>
-                                        <p id="summary-plan-name" class="font-semibold text-slate-700 dark:text-white"></p>
+                                <form id="checkout-form" method="GET">
+                                    <div class="mt-6 space-y-4">
+                                        <div class="flex justify-between items-center">
+                                            <p class="text-slate-500 dark:text-slate-400">Selected Plan:</p>
+                                            <p id="summary-plan-name" class="font-semibold text-slate-700 dark:text-white"></p>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <p class="text-slate-500 dark:text-slate-400">One-time Fee:</p>
+                                            <p id="summary-plan-price" class="font-semibold text-slate-700 dark:text-white"></p>
+                                        </div>
                                     </div>
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-slate-500 dark:text-slate-400">One-time Fee:</p>
-                                        <p id="summary-plan-price" class="font-semibold text-slate-700 dark:text-white"></p>
-                                    </div>
-                                </div>
 
-                                <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-                                    <label for="discount-code" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Discount Code</label>
-                                    <div class="mt-1 flex">
-                                        <input type="text" id="discount-code" placeholder="Enter code" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-l-lg px-4 py-2 text-slate-800 dark:text-white focus:ring-1 focus:ring-gold-500 focus:border-gold-500 transition">
-                                        <button class="px-4 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-r-lg hover:bg-slate-300 dark:hover:bg-slate-600 font-semibold text-sm">Apply</button>
+                                    <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+                                        <label for="discount-code" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Discount Code</label>
+                                        <div class="mt-1 flex">
+                                            <input type="text" id="discount-code" placeholder="Enter code" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-l-lg px-4 py-2 text-slate-800 dark:text-white focus:ring-1 focus:ring-gold-500 focus:border-gold-500 transition">
+                                            <button type="button" class="px-4 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-r-lg hover:bg-slate-300 dark:hover:bg-slate-600 font-semibold text-sm">Apply</button>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
-                                    <div class="flex justify-between items-center text-lg">
-                                        <p class="text-slate-600 dark:text-slate-300 font-semibold">Total:</p>
-                                        <p id="summary-total" class="font-bold text-gold-500"></p>
+                                    <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                                        <div class="flex justify-between items-center text-lg">
+                                            <p class="text-slate-600 dark:text-slate-300 font-semibold">Total:</p>
+                                            <p id="summary-total" class="font-bold text-gold-500"></p>
+                                        </div>
+                                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm font-bold text-gray-950 bg-gold-500 hover:bg-gold-600 transition">
+                                            Proceed to Payment
+                                        </button>
                                     </div>
-                                    <button class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm font-bold text-gray-950 bg-gold-500 hover:bg-gold-600 transition">
-                                        Proceed to Payment
-                                    </button>
-                                </div>
+                                </form>
                                 <p class="mt-4 text-xs text-slate-500 text-center">Your fee is fully refundable with your first payout.</p>
                             </div>
                         </div>
@@ -132,37 +199,43 @@
             const summaryPlanName = document.getElementById('summary-plan-name');
             const summaryPlanPrice = document.getElementById('summary-plan-price');
             const summaryTotal = document.getElementById('summary-total');
+            const summaryBox = document.getElementById('order-summary-box');
+            const checkoutForm = document.getElementById('checkout-form');
 
             function selectPlan(card) {
-                // Remove selected state from all cards
+                if (!card) return;
                 challengeCards.forEach(c => c.classList.remove('selected'));
-                // Add selected state to the clicked card
                 card.classList.add('selected');
 
+                const planId = card.dataset.planId;
                 const planName = card.dataset.planName;
-                const planPrice = parseFloat(card.dataset.planPrice);
+                const planPriceValue = card.dataset.planPrice;
+                const planPrice = (planPriceValue && !isNaN(parseFloat(planPriceValue))) ? parseFloat(planPriceValue) : 0;
 
-                // Update summary
                 summaryPlanName.textContent = planName;
                 summaryPlanPrice.textContent = `$${planPrice.toFixed(2)}`;
                 summaryTotal.textContent = `$${planPrice.toFixed(2)}`;
+                
+                // Set the form action dynamically
+                checkoutForm.action = `/checkout/${planId}`;
 
-                // Show details, hide empty state
                 summaryEmpty.classList.add('hidden');
                 summaryDetails.classList.remove('hidden');
+
+                if (window.innerWidth < 1024) {
+                    if (summaryBox) {
+                        summaryBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
             }
 
             challengeCards.forEach(card => {
-                card.querySelector('.start-challenge-btn').addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent card click event from firing again
-                    selectPlan(card);
-                });
-                 card.addEventListener('click', () => {
+                card.addEventListener('click', () => {
                     selectPlan(card);
                 });
             });
 
-            // Sidebar and Theme toggler logic from your other pages
+            // Sidebar and Theme toggler logic
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const sidebar = document.querySelector('aside');
             const sidebarCloseButton = document.getElementById('sidebar-close-button');

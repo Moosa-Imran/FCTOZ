@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <%- include('partials/head') %>
+    <style>
+        .instruction-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+            backdrop-filter: blur(10px);
+        }
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-black text-slate-800 dark:text-slate-200">
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 md:hidden hidden"></div>
+    <div class="flex min-h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        <div class="flex-1 md:ml-64 min-w-0">
+            <%- include('partials/header.ejs') %>
+            
+            <main class="pt-24 px-4 sm:px-6 lg:px-8 pb-8">
+                <!-- Header -->
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Complete Your Payment</h1>
+                    <p class="mt-1 text-slate-500 dark:text-slate-400">Follow the steps below to finalize your challenge enrollment.</p>
+                </div>
+
+                <div class="mt-8 grid lg:grid-cols-5 gap-8">
+                    <!-- Payment Instructions -->
+                    <div class="lg:col-span-3">
+                        <div class="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+                            <h2 class="text-xl font-bold">Step 1: Send Payment</h2>
+                            <p class="text-slate-500 mt-1">Send the exact amount to the USDT (TRC20) address below.</p>
+
+                            <div class="mt-6 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div class="flex flex-col sm:flex-row items-center gap-6">
+                                    <div class="flex-shrink-0">
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=YOUR_USDT_TRC20_WALLET_ADDRESS_HERE" alt="USDT TRC20 Wallet QR Code" class="rounded-lg bg-white p-1">
+                                    </div>
+                                    <div class="w-full">
+                                        <p class="text-sm text-slate-500">Amount to send:</p>
+                                        <p class="text-2xl font-bold text-gold-500">$<%= plan.price.toFixed(2) %></p>
+                                        <p class="text-sm text-slate-500 mt-4">USDT (TRC20) Wallet Address:</p>
+                                        <div class="relative mt-1">
+                                            <input id="wallet-address" type="text" readonly value="YOUR_USDT_TRC20_WALLET_ADDRESS_HERE" class="w-full bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-4 pr-12 py-2 font-mono text-sm">
+                                            <button id="copy-btn" class="copy-btn absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-gold-500 transition">
+                                                <i data-lucide="copy" class="h-5 w-5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6">
+                                <h3 class="font-bold text-lg">Important Instructions:</h3>
+                                <ul class="mt-2 space-y-2 text-sm text-slate-500 list-disc list-inside">
+                                    <li>Ensure you are sending USDT on the <strong class="text-slate-700 dark:text-slate-300">TRC20 (Tron)</strong> network.</li>
+                                    <li>Sending any other currency or on a different network will result in the loss of funds.</li>
+                                    <li>Include the transaction fees in your transfer. The amount we receive must be exactly <strong class="text-slate-700 dark:text-slate-300">$<%= plan.price.toFixed(2) %></strong>.</li>
+                                    <li>Your account will be activated after we confirm the transaction, typically within 1-2 hours.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Proof -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+                            <h2 class="text-xl font-bold">Step 2: Submit Proof</h2>
+                            <p class="text-slate-500 mt-1">Once you have sent the payment, submit the details below.</p>
+                            
+                            <form action="/checkout/submit" method="POST" enctype="multipart/form-data" class="mt-6 space-y-6">
+                                <input type="hidden" name="planId" value="<%= plan._id %>">
+                                <div>
+                                    <label for="transactionHash" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Hash (TxID)</label>
+                                    <input type="text" id="transactionHash" name="transactionHash" required class="mt-1 w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-1 focus:ring-gold-500 focus:border-gold-500 transition" placeholder="e.g., 0x...">
+                                </div>
+                                <div>
+                                    <label for="ss" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Payment Screenshot</label>
+                                    <input type="file" id="ss" name="ss" required accept="image/png, image/jpeg, image/jpg" class="mt-1 w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold-50 file:text-gold-700 hover:file:bg-gold-100 dark:file:bg-gold-500/20 dark:file:text-gold-300 dark:hover:file:bg-gold-500/30">
+                                </div>
+                                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm font-bold text-gray-950 bg-gold-500 hover:bg-gold-600 transition button-glow">
+                                    Submit for Verification
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            const copyBtn = document.getElementById('copy-btn');
+            const walletAddressInput = document.getElementById('wallet-address');
+
+            copyBtn.addEventListener('click', () => {
+                walletAddressInput.select();
+                document.execCommand('copy');
+                
+                // Visual feedback
+                const originalIcon = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i data-lucide="check" class="h-5 w-5 text-green-500"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalIcon;
+                    lucide.createIcons();
+                }, 2000);
+            });
+
+            // Sidebar and Theme toggler logic
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const sidebar = document.querySelector('aside');
+            const sidebarCloseButton = document.getElementById('sidebar-close-button');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            
+            if (mobileMenuButton && sidebar && sidebarCloseButton && sidebarOverlay) {
+                const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+                const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+                mobileMenuButton.addEventListener('click', openSidebar);
+                sidebarCloseButton.addEventListener('click', closeSidebar);
+                sidebarOverlay.addEventListener('click', closeSidebar);
+            }
+
+            const themeToggle = document.getElementById('theme-toggle');
+            if(themeToggle) {
+                const htmlEl = document.documentElement;
+                themeToggle.addEventListener('click', () => {
+                    htmlEl.classList.toggle('dark');
+                    localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

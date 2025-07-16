@@ -1,0 +1,36 @@
+<% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+    <div id="alert-container" class="fixed top-5 right-5 z-50 flex flex-col items-end space-y-3">
+        <% errors.forEach(error => { %>
+            <div class="alert-toast max-w-sm w-full bg-red-500/10 border border-red-500/20 text-white p-4 rounded-lg shadow-lg flex items-start">
+                <div class="flex-shrink-0">
+                    <i data-lucide="alert-circle" class="h-5 w-5 text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-300">Error</p>
+                    <p class="text-sm text-slate-300 mt-1"><%= error.msg %></p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <div class="-mx-1.5 -my-1.5">
+                        <button type="button" class="inline-flex rounded-md p-1.5 text-red-400 hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-red-500" onclick="this.parentElement.closest('.alert-toast').remove()">
+                            <span class="sr-only">Dismiss</span>
+                            <i data-lucide="x" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+    <script>
+        // Auto-dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            const alerts = document.querySelectorAll('.alert-toast');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.transition = 'opacity 0.5s ease';
+                    alert.style.opacity = '0';
+                    setTimeout(() => alert.remove(), 500);
+                }, 5000);
+            });
+        });
+    </script>
+<% } %>

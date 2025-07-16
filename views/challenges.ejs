@@ -6,9 +6,9 @@
 <body class="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200">
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 md:hidden hidden"></div>
     <div class="flex min-h-screen">
-        <%- include('partials/sidebar') %>
+        <%- include('partials/sidebar.ejs') %>
         <div class="flex-1 md:ml-64">
-            <%- include('partials/header') %>
+            <%- include('partials/header.ejs') %>
             <main class="pt-24 px-4 sm:px-6 lg:px-8 pb-8">
                 <!-- Header -->
                 <div class="flex justify-between items-center">
@@ -16,45 +16,105 @@
                         <h1 class="text-3xl font-bold">My Challenges</h1>
                         <p class="mt-1 text-slate-500 dark:text-slate-400">Track your progress and review past performance.</p>
                     </div>
-                    <button class="px-5 py-2.5 font-semibold text-white bg-gold-600 hover:bg-gold-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black button-glow flex items-center">
+                    <a href="/new-challenge" class="px-5 py-2.5 font-semibold text-white bg-gold-600 hover:bg-gold-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black button-glow flex items-center">
                         <i data-lucide="plus" class="h-5 w-5 mr-2"></i> Start New Challenge
-                    </button>
+                    </a>
                 </div>
 
-                <!-- Active Challenge Section -->
+                <!-- Active & Passed Challenges Section -->
                 <div class="mt-8">
-                    <h2 class="text-xl font-semibold">Active Challenge</h2>
-                    <div class="mt-4 p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
-                        <div class="flex flex-col md:flex-row justify-between items-start">
-                            <div>
-                                <h3 class="text-2xl font-bold text-gold-500"><%= challenges.activeChallenge.name %></h3>
-                                <p class="text-sm text-slate-500 dark:text-slate-400">Account Size: <span class="font-medium text-slate-700 dark:text-slate-300">$<%= challenges.activeChallenge.accountSize.toLocaleString() %></span></p>
-                                <p class="text-sm text-slate-500 dark:text-slate-400">Period: <span class="font-medium text-slate-700 dark:text-slate-300"><%= challenges.activeChallenge.startDate %> - <%= challenges.activeChallenge.endDate %></span></p>
+                    <h2 class="text-xl font-semibold">Current Challenges</h2>
+                    <% if (activeChallenges && activeChallenges.length > 0) { %>
+                        <% activeChallenges.forEach(challenge => { %>
+                            <div class="mt-4 p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
+                                <div class="flex flex-col md:flex-row justify-between items-start">
+                                    <div>
+                                        <h3 class="text-2xl font-bold text-gold-500"><%= challenge.planDetails.name %></h3>
+                                        <p class="text-xs font-mono text-slate-400 dark:text-slate-500 mt-1">ID: <%= challenge.challengeId %></p>
+                                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Account Size: <span class="font-medium text-slate-700 dark:text-slate-300">$<%= challenge.planDetails.accountSize.toLocaleString() %></span></p>
+                                        <p class="text-sm text-slate-500 dark:text-slate-400">Started On: <span class="font-medium text-slate-700 dark:text-slate-300"><%= new Date(challenge.startDate).toLocaleDateString() %></span></p>
+                                    </div>
+                                    <div class="mt-4 md:mt-0 text-right">
+                                        <% if (challenge.status === 'active') { %>
+                                            <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-500/20 rounded-full">
+                                                <i data-lucide="activity" class="w-4 h-4 mr-1.5"></i> Active
+                                            </span>
+                                        <% } else if (challenge.status === 'passed') { %>
+                                            <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-500/20 rounded-full">
+                                                <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5"></i> Completed
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <div class="mt-6">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-base font-medium text-slate-700 dark:text-slate-300">Overall Progress</span>
+                                        <span class="text-sm font-medium text-gold-500"><%= challenge.progressPercentage %>%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 rounded-full h-2.5 dark:bg-slate-700">
+                                        <div class="bg-gradient-to-r from-gold-400 to-gold-600 h-2.5 rounded-full" style="width: <%= challenge.progressPercentage %>%"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
+                                    <% challenge.metrics.forEach(metric => { %>
+                                        <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                            <p class="text-sm text-slate-500 dark:text-slate-400"><%= metric.name %></p>
+                                            <p class="text-lg font-bold mt-1"><%= metric.current %> / <span class="text-base font-normal text-slate-600 dark:text-slate-400"><%= metric.value %></span></p>
+                                        </div>
+                                    <% }); %>
+                                </div>
+                                
+                                <!-- Payout & Withdraw Button Section -->
+                                <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <i data-lucide="award" class="w-8 h-8 text-green-500"></i>
+                                        <div>
+                                            <p class="text-sm text-slate-500">Eligible Payout</p>
+                                            <p class="text-xl font-bold text-green-600 dark:text-green-400">$<%= challenge.planDetails.payout.toLocaleString() %></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        class="w-full sm:w-auto px-6 py-3 font-semibold rounded-lg transition-colors duration-200 
+                                        <%= challenge.isPayoutEligible ? 'text-gray-950 bg-gold-500 hover:bg-gold-600 button-glow' : 'text-slate-500 bg-slate-200 dark:bg-slate-700 cursor-not-allowed' %>"
+                                        <%- !challenge.isPayoutEligible ? 'disabled' : '' %>
+                                    >
+                                        Withdraw Payout
+                                    </button>
+                                </div>
+
                             </div>
-                            <div class="mt-4 md:mt-0 text-right">
-                                 <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-500/20 rounded-full">
-                                    <i data-lucide="activity" class="w-4 h-4 mr-1.5"></i>
-                                    <%= challenges.activeChallenge.status %>
-                                 </span>
-                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="mt-4 p-6 text-center bg-white dark:bg-slate-900/50 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700">
+                            <i data-lucide="target" class="mx-auto h-10 w-10 text-slate-400"></i>
+                            <p class="mt-2 font-semibold">No Active Challenges</p>
+                            <p class="text-sm text-slate-500">Your approved challenges will appear here.</p>
                         </div>
-                        <div class="mt-6">
-                            <div class="flex justify-between mb-1">
-                                <span class="text-base font-medium text-slate-700 dark:text-slate-300">Overall Progress</span>
-                                <span class="text-sm font-medium text-gold-500"><%= challenges.activeChallenge.progress %>%</span>
-                            </div>
-                            <div class="w-full bg-slate-200 rounded-full h-2.5 dark:bg-slate-700">
-                                <div class="bg-gradient-to-r from-gold-400 to-gold-600 h-2.5 rounded-full" style="width: <%= challenges.activeChallenge.progress %>%"></div>
-                            </div>
-                        </div>
-                        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                            <% challenges.activeChallenge.metrics.forEach(metric => { %>
-                                <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                                    <p class="text-sm text-slate-500 dark:text-slate-400"><%= metric.name %></p>
-                                    <p class="text-lg font-bold mt-1"><%= metric.current %> / <span class="text-base font-normal text-slate-600 dark:text-slate-400"><%= metric.value %></span></p>
+                    <% } %>
+                </div>
+
+                <!-- Pending Challenges Section -->
+                <div class="mt-10">
+                    <h2 class="text-xl font-semibold">Pending Verification</h2>
+                    <div class="mt-4 space-y-4">
+                        <% if (pendingChallenges && pendingChallenges.length > 0) { %>
+                            <% pendingChallenges.forEach(challenge => { %>
+                                <div class="p-5 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow flex justify-between items-center">
+                                    <div>
+                                        <h4 class="font-bold"><%= challenge.planName %></h4>
+                                        <p class="text-sm text-slate-500 dark:text-slate-400">Submitted: <%= new Date(challenge.createdAt).toLocaleString() %></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-500/20 rounded-full">
+                                            <i data-lucide="hourglass" class="w-4 h-4 mr-1.5 animate-spin" style="animation-duration: 3s;"></i> Pending Verification
+                                        </span>
+                                    </div>
                                 </div>
                             <% }); %>
-                        </div>
+                        <% } else { %>
+                            <p class="text-sm text-slate-500 italic">No challenges are currently pending verification.</p>
+                        <% } %>
                     </div>
                 </div>
 
@@ -62,29 +122,46 @@
                 <div class="mt-10">
                     <h2 class="text-xl font-semibold">Challenge History</h2>
                     <div class="mt-4 space-y-4">
-                        <% challenges.pastChallenges.forEach(challenge => { %>
-                            <div class="p-5 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow flex justify-between items-center">
-                                <div>
-                                    <h4 class="font-bold"><%= challenge.name %></h4>
-                                    <p class="text-sm text-slate-500 dark:text-slate-400">Completed: <%= challenge.completionDate %></p>
-                                    <% if(challenge.status === 'Failed') { %>
-                                        <p class="text-sm text-red-500 dark:text-red-400">Reason: <%= challenge.reason %></p>
-                                    <% } %>
+                        <% if (pastChallenges && pastChallenges.length > 0) { %>
+                            <% pastChallenges.forEach(item => { %>
+                                <div class="p-5 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <div>
+                                        <h4 class="font-bold"><%= item.planDetails ? item.planDetails.name : item.planName %></h4>
+                                        <% if (item.challengeId) { %>
+                                            <p class="text-xs font-mono text-slate-400 dark:text-slate-500">ID: <%= item.challengeId %></p>
+                                        <% } %>
+                                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Date: <%= new Date(item.completionDate || item.createdAt).toLocaleDateString() %></p>
+                                        <% if(item.status === 'failed' && item.reason) { %>
+                                            <p class="text-sm text-red-500 dark:text-red-400">Reason: <%= item.reason %></p>
+                                        <% } else if (item.status === 'rejected' && item.rejectionReason) { %>
+                                            <p class="text-sm text-red-500 dark:text-red-400">Reason: <%= item.rejectionReason %></p>
+                                        <% } %>
+                                    </div>
+                                    <div class="text-right flex-shrink-0">
+                                        <% if(item.status === 'passed') { %>
+                                            <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-500/20 rounded-full">
+                                                <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5"></i> Passed
+                                            </span>
+                                            <p class="text-lg font-bold text-green-500 mt-1">Payout: $<%= item.planDetails.payout.toLocaleString() %></p>
+                                        <% } else if (item.status === 'withdrawn') { %>
+                                            <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-500/20 rounded-full">
+                                                <i data-lucide="archive" class="w-4 h-4 mr-1.5"></i> Withdrawn
+                                            </span>
+                                        <% } else if (item.status === 'failed' || item.status === 'rejected') { %>
+                                            <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-500/20 rounded-full">
+                                                <i data-lucide="x-circle" class="w-4 h-4 mr-1.5"></i> <%= item.status.charAt(0).toUpperCase() + item.status.slice(1) %>
+                                            </span>
+                                        <% } else { %>
+                                             <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-slate-700 bg-slate-100 dark:text-slate-300 dark:bg-slate-500/20 rounded-full">
+                                                <i data-lucide="archive" class="w-4 h-4 mr-1.5"></i> Archived
+                                            </span>
+                                        <% } %>
+                                    </div>
                                 </div>
-                                <div class="text-right">
-                                    <% if(challenge.status === 'Passed') { %>
-                                        <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-500/20 rounded-full">
-                                            <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5"></i> Passed
-                                        </span>
-                                        <p class="text-lg font-bold text-green-500 mt-1">Payout: $<%= challenge.payout.toLocaleString() %></p>
-                                    <% } else { %>
-                                        <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-500/20 rounded-full">
-                                            <i data-lucide="x-circle" class="w-4 h-4 mr-1.5"></i> Failed
-                                        </span>
-                                    <% } %>
-                                </div>
-                            </div>
-                        <% }); %>
+                            <% }); %>
+                        <% } else { %>
+                            <p class="text-sm text-slate-500 italic">No past challenges found.</p>
+                        <% } %>
                     </div>
                 </div>
             </main>
@@ -92,29 +169,28 @@
     </div>
 
   <script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
 
-    // --- Theme Toggler ---
-    const themeToggle = document.getElementById('theme-toggle');
-    const htmlEl = document.documentElement;
-    themeToggle.addEventListener('click', () => {
-      htmlEl.classList.toggle('dark');
-      localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
-      renderChart(); // Re-render chart with new theme colors
+        // --- Theme Toggler ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlEl = document.documentElement;
+        themeToggle.addEventListener('click', () => {
+          htmlEl.classList.toggle('dark');
+          localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // --- Mobile Sidebar ---
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const sidebar = document.querySelector('aside');
+        const sidebarCloseButton = document.getElementById('sidebar-close-button');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+        const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+        mobileMenuButton.addEventListener('click', openSidebar);
+        sidebarCloseButton.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
     });
-
-    // --- Mobile Sidebar ---
-    const mobileMenuButton = document.getElementById('mobile-menu-button');
-    const sidebar = document.querySelector('aside');
-    const sidebarCloseButton = document.getElementById('sidebar-close-button');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
-    const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
-    mobileMenuButton.addEventListener('click', openSidebar);
-    sidebarCloseButton.addEventListener('click', closeSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
-    
   </script>
 
 </body>
