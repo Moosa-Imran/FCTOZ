@@ -85,7 +85,12 @@
                                 <option value="">Select an active challenge...</option>
                                 <% if (activeChallenges && activeChallenges.length > 0) { %>
                                     <% activeChallenges.forEach(challenge => { %>
-                                        <option value="<%= challenge._id %>"><%= challenge.challengeId %> (<%= challenge.planDetails.name %>)</option>
+                                        <option 
+                                            value="<%= challenge._id %>" 
+                                            <%- challenge.submittedToday ? 'disabled' : '' %>
+                                            data-submitted="<%= challenge.submittedToday %>">
+                                            <%= challenge.challengeId %> (<%= challenge.planDetails.name %>)
+                                        </option>
                                     <% }); %>
                                 <% } else { %>
                                     <option value="" disabled>No active challenges found.</option>
@@ -144,6 +149,7 @@
                                 <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                                     <tr>
                                         <th class="px-6 py-3 font-medium">Date</th>
+                                        <th class="px-6 py-3 font-medium">Challenge ID</th>
                                         <th class="px-6 py-3 font-medium">Submitted P&L</th>
                                         <th class="px-6 py-3 font-medium">Status</th>
                                         <th class="px-6 py-3 font-medium">Broker Remarks</th>
@@ -154,6 +160,7 @@
                                         <% reports.forEach(sub => { %>
                                             <tr class="border-b border-slate-200 dark:border-slate-800">
                                                 <td class="px-6 py-4 whitespace-nowrap"><%= new Date(sub.createdAt).toLocaleDateString() %></td>
+                                                <td class="px-6 py-4 font-mono text-slate-500 dark:text-slate-400"><%= sub.challengeDetails ? sub.challengeDetails.challengeId : sub.challengeId %></td>
                                                 <td class="px-6 py-4 font-semibold <%= sub.pnlAmount >= 0 ? 'text-green-500' : 'text-red-500' %>">
                                                     <%= sub.pnlAmount >= 0 ? '+' : '' %>$<%= Math.abs(sub.pnlAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
                                                 </td>
@@ -171,7 +178,7 @@
                                         <% }); %>
                                     <% } else { %>
                                         <tr>
-                                            <td colspan="4" class="text-center py-10 text-slate-500">No submission history found.</td>
+                                            <td colspan="5" class="text-center py-10 text-slate-500">No submission history found.</td>
                                         </tr>
                                     <% } %>
                                 </tbody>
@@ -282,10 +289,10 @@
 
         submitBtn.addEventListener('click', (e) => {
             if (pnlForm.checkValidity()) {
-                e.preventDefault(); // Prevent form submission
+                e.preventDefault();
                 confirmationModal.classList.remove('hidden');
             } else {
-                pnlForm.reportValidity(); // Show native validation errors
+                pnlForm.reportValidity();
             }
         });
 
@@ -296,6 +303,33 @@
         confirmSubmitBtn.addEventListener('click', () => {
             pnlForm.submit();
         });
+
+        // --- Countdown Timer Logic ---
+        const challengeSelect = document.getElementById('challenge-account');
+        const optionsToUpdate = Array.from(challengeSelect.options).filter(opt => opt.dataset.submitted === 'true');
+
+        function updateTimers() {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+
+            const diff = tomorrow - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            const timerString = `(Next report in ${hours}h ${minutes}m)`;
+
+            optionsToUpdate.forEach(option => {
+                const originalText = option.textContent.split(' (Next')[0]; // Get text before timer
+                option.textContent = `${originalText} ${timerString}`;
+            });
+        }
+        
+        if (optionsToUpdate.length > 0) {
+            updateTimers(); // Initial call
+            setInterval(updateTimers, 60000); // Update every minute
+        }
     });
 </script>
 </body>

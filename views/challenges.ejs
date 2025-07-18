@@ -21,8 +21,57 @@
                     </a>
                 </div>
 
-                <!-- Active & Passed Challenges Section -->
+                <!-- Awaiting Credentials Section -->
                 <div class="mt-8">
+                    <h2 class="text-xl font-semibold">Awaiting Activation</h2>
+                     <% if (semiActiveChallenges && semiActiveChallenges.length > 0) { %>
+                        <% semiActiveChallenges.forEach(tx => { %>
+                            <div class="mt-4 p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
+                                <div class="flex flex-col sm:flex-row justify-between items-start">
+                                    <h3 class="text-xl font-bold"><%= tx.planName %></h3>
+                                    <% if (tx.status === 'awaiting_credentials') { %>
+                                        <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-500/20 rounded-full">Payment Verified</span>
+                                    <% } else if (tx.status === 'credentials_pending') { %>
+                                        <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-500/20 rounded-full">Credentials Pending</span>
+                                    <% } else if (tx.status === 'credentials_rejected') { %>
+                                        <span class="inline-flex items-center px-3 py-1 text-sm font-medium text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-500/20 rounded-full">Credentials Rejected</span>
+                                    <% } %>
+                                </div>
+                                
+                                <% if (tx.status === 'awaiting_credentials' || tx.status === 'credentials_rejected') { %>
+                                    <% if (tx.status === 'credentials_rejected') { %>
+                                        <p class="mt-2 text-sm text-red-500"><strong>Reason:</strong> <%= tx.credentialRejectionReason %></p>
+                                    <% } %>
+                                    <form action="/challenges/submit-credentials" method="POST" class="mt-4 space-y-4">
+                                        <input type="hidden" name="transactionId" value="<%= tx._id %>">
+                                        <div>
+                                            <label class="block text-sm font-medium">TradingView Email</label>
+                                            <input type="email" name="tradingViewEmail" required class="mt-1 w-full bg-slate-100 dark:bg-slate-800 rounded-md p-2 border border-slate-300 dark:border-slate-700 focus:ring-gold-500 focus:border-gold-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium">TradingView Password</label>
+                                            <input type="password" name="tradingViewPassword" required class="mt-1 w-full bg-slate-100 dark:bg-slate-800 rounded-md p-2 border border-slate-300 dark:border-slate-700 focus:ring-gold-500 focus:border-gold-500">
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <button type="submit" class="px-4 py-2 bg-gold-600 text-white rounded-lg font-semibold hover:bg-gold-700">Submit Credentials</button>
+                                            <div class="relative group">
+                                                <i data-lucide="info" class="w-5 h-5 text-slate-400 cursor-pointer"></i>
+                                                <div class="absolute bottom-full right-0 mb-2 w-64 p-2 text-xs bg-slate-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                    Please do not change the password or add 2FA to this account to avoid penalties or challenge failure.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                <% } %>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                         <p class="mt-4 text-sm text-slate-500 italic">No challenges are currently awaiting activation.</p>
+                    <% } %>
+                </div>
+
+                <!-- Active & Passed Challenges Section -->
+                <div class="mt-10">
                     <h2 class="text-xl font-semibold">Current Challenges</h2>
                     <% if (activeChallenges && activeChallenges.length > 0) { %>
                         <% activeChallenges.forEach(challenge => { %>
@@ -57,9 +106,14 @@
                                 </div>
                                 <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
                                     <% challenge.metrics.forEach(metric => { %>
-                                        <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                        <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg transition-all <%= (metric.isPending) ? 'ring-2 ring-amber-500' : '' %>">
                                             <p class="text-sm text-slate-500 dark:text-slate-400"><%= metric.name %></p>
-                                            <p class="text-lg font-bold mt-1"><%= metric.current %> / <span class="text-base font-normal text-slate-600 dark:text-slate-400"><%= metric.value %></span></p>
+                                            <p class="text-lg font-bold mt-1 <%= (metric.isPending) ? 'text-amber-400' : '' %>">
+                                                <%= metric.current %> / <span class="text-base font-normal text-slate-600 dark:text-slate-400"><%= metric.value %></span>
+                                            </p>
+                                            <% if (metric.isPending) { %>
+                                                <p class="text-xs text-amber-500 mt-1 animate-pulse">Complete remaining days</p>
+                                            <% } %>
                                         </div>
                                     <% }); %>
                                 </div>
@@ -94,9 +148,9 @@
                     <% } %>
                 </div>
 
-                <!-- Pending Challenges Section -->
+                <!-- Pending Payment Verification Section -->
                 <div class="mt-10">
-                    <h2 class="text-xl font-semibold">Pending Verification</h2>
+                    <h2 class="text-xl font-semibold">Pending Payment Verification</h2>
                     <div class="mt-4 space-y-4">
                         <% if (pendingChallenges && pendingChallenges.length > 0) { %>
                             <% pendingChallenges.forEach(challenge => { %>
@@ -113,7 +167,7 @@
                                 </div>
                             <% }); %>
                         <% } else { %>
-                            <p class="text-sm text-slate-500 italic">No challenges are currently pending verification.</p>
+                            <p class="text-sm text-slate-500 italic">No challenges are currently pending payment verification.</p>
                         <% } %>
                     </div>
                 </div>
