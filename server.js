@@ -22,7 +22,8 @@ const client = new MongoClient(MONGO_URI);
 // --- Multer Storage Configuration ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'public/ss'); // Destination folder for screenshots
+        // Store both transaction screenshots and ticket uploads here
+        cb(null, 'public/uploads'); 
     },
     filename: function (req, file, cb) {
         // Create a unique filename to prevent overwrites
@@ -80,11 +81,13 @@ async function startServer() {
         const mainRoutes = require('./routes/index');
         const authRoutes = require('./routes/auth');
         const dashboardRoutes = require('./routes/dashboard');
+        const ticketsRoutes = require('./routes/ticketsRoutes'); // New tickets router
 
         // Mount routers correctly
         app.use('/', mainRoutes);
         app.use('/auth', authRoutes);
         app.use('/', dashboardRoutes);
+        app.use('/tickets', ticketsRoutes); // Use the new tickets router
 
         app.listen(port, () => {
             console.log(`Server is running on http://localhost:${port}`);

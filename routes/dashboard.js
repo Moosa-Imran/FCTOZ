@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
 const isAuthenticated = require('../middleware/isAuthenticated');
+const sendEmail = require('../utils/emailService'); // Import the email service
 
 // Route for the dashboard page
 router.get('/dashboard', isAuthenticated, (req, res) => {
@@ -31,25 +32,22 @@ router.get('/dashboard', isAuthenticated, (req, res) => {
   res.render('dashboard', { title: 'FCTOZ Customer Panel', user: userData, success });
 });
 
-// Route for the "My Challenges" page - NOW INCLUDES SEMI-ACTIVE STATE
+// Route for the "My Challenges" page
 router.get('/challenges', isAuthenticated, async (req, res) => {
     try {
         const db = req.app.locals.db;
         const userId = req.user.userId;
 
-        // Fetch transactions for payment verification (status: 'pending')
-        const pendingChallenges = await db.collection('transactions').find({
-            userId: userId,
-            status: 'pending'
-        }).sort({ createdAt: -1 }).toArray();
-
-        // Fetch transactions awaiting credentials, pending, or rejected
         const semiActiveChallenges = await db.collection('transactions').find({
             userId: userId,
             status: { $in: ['awaiting_credentials', 'credentials_pending', 'credentials_rejected'] }
         }).sort({ createdAt: -1 }).toArray();
+        
+        const pendingChallenges = await db.collection('transactions').find({ 
+            userId: userId, 
+            status: 'pending' 
+        }).sort({ createdAt: -1 }).toArray();
 
-        // Fetch active and past challenges
         const userChallenges = await db.collection('challenges').aggregate([
             { $match: { userId: userId } }, { $sort: { startDate: -1 } },
             { $lookup: { from: 'plans', localField: 'planId', foreignField: '_id', as: 'planDetails' } },
@@ -72,7 +70,7 @@ router.get('/challenges', isAuthenticated, async (req, res) => {
                 const maxTradingDays = plan.timeLimit || plan.minTradingDays;
                 challenge.metrics = [
                     { name: 'Profit Target', current: `$${challenge.totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2})}`, value: `$${totalProfitTarget.toLocaleString('en-US', {minimumFractionDigits: 2})}` },
-                    { name: challenge.tradingDays >= plan.minTradingDays ? 'Trading Days' : 'Min. Trading Days', current: `${challenge.tradingDays}`, value: `${challenge.tradingDays >= plan.minTradingDays ? maxTradingDays : plan.minTradingDays} Days` }
+                    { name: challenge.tradingDays >= plan.minTradingDays ? 'Trading Days' : 'Min. Trading Days', current: `${challenge.tradingDays}`, value: `${challenge.tradingDays >= plan.minTradingDays ? maxTradingDays : plan.minTradingDays} Days`, isPending: profitTargetMet && !minDaysMet }
                 ];
                 activeChallenges.push(challenge);
             } else {
@@ -80,14 +78,13 @@ router.get('/challenges', isAuthenticated, async (req, res) => {
             }
         });
 
-        // Fetch rejected transactions for history
         const rejectedTransactions = await db.collection('transactions').find({ userId: userId, status: 'rejected' }).sort({ createdAt: -1 }).toArray();
         const finalPastChallenges = [...pastChallenges, ...rejectedTransactions].sort((a, b) => new Date(b.completionDate || b.createdAt) - new Date(a.completionDate || a.createdAt));
 
         res.render('challenges', { 
             title: 'My Challenges - FCTOZ',
             semiActiveChallenges,
-            pendingChallenges, // Added this back
+            pendingChallenges,
             activeChallenges,
             pastChallenges: finalPastChallenges
         });
@@ -114,7 +111,7 @@ router.post('/challenges/submit-credentials', isAuthenticated, async (req, res) 
                 $set: {
                     status: 'credentials_pending',
                     tradingViewEmail: tradingViewEmail,
-                    tradingViewPassword: tradingViewPassword, // Note: Storing passwords in plain text is not secure
+                    tradingViewPassword: tradingViewPassword,
                     updatedAt: new Date()
                 }
             }
@@ -131,14 +128,14 @@ router.get('/reports', isAuthenticated, async (req, res) => {
     try {
         const db = req.app.locals.db;
         const userId = req.user.userId;
-        const activeChallenges = await db.collection('challenges').aggregate([
+        let activeChallenges = await db.collection('challenges').aggregate([
             { $match: { userId: userId, status: 'active' } },
             { $lookup: { from: 'plans', localField: 'planId', foreignField: '_id', as: 'planDetails' } },
             { $unwind: '$planDetails' }
         ]).toArray();
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const activeChallengesWithStatus = activeChallenges.map(challenge => {
+        activeChallenges = activeChallenges.map(challenge => {
             const lastUpdate = new Date(challenge.lastUserUpdate);
             lastUpdate.setHours(0, 0, 0, 0);
             return {
@@ -153,7 +150,7 @@ router.get('/reports', isAuthenticated, async (req, res) => {
         ]).toArray();
         res.render('reports', {
             title: 'P&L Reports - FCTOZ',
-            activeChallenges: activeChallengesWithStatus,
+            activeChallenges: activeChallenges,
             reports: reportHistory
         });
     } catch (error) {
@@ -239,12 +236,6 @@ router.get('/academy', isAuthenticated, (req, res) => {
     res.render('academy', { title: 'FCTOZ Academy', academy: academyData });
 });
 
-// Route for the "Support Tickets" page
-router.get('/tickets', isAuthenticated, (req, res) => {
-    const ticketData = { activeTickets: [{ id: 'TKT-78901', subject: 'Question about payout schedule', status: 'Active', lastUpdate: '2 hours ago', responseTime: '8-12 hours' }], closedTickets: [] };
-    res.render('tickets', { title: 'Support Tickets - FCTOZ', tickets: ticketData });
-});
-
 // Route for the Account Settings page
 router.get('/settings', isAuthenticated, async (req, res) => {
     const db = req.app.locals.db;
@@ -319,7 +310,20 @@ router.post('/checkout/submit', isAuthenticated, (req, res) => {
             const plan = await db.collection('plans').findOne({ _id: new ObjectId(planId) });
             if (!plan) { return res.status(404).send('Plan not found'); }
             const newTransaction = { userId: req.user.userId, planId: new ObjectId(planId), planName: plan.name, planAmount: plan.price, transactionHash: transactionHash, ss: req.file ? req.file.filename : null, status: 'pending', createdAt: new Date() };
-            await db.collection('transactions').insertOne(newTransaction);
+            
+            const result = await db.collection('transactions').insertOne(newTransaction);
+            
+            // --- SEND CONFIRMATION EMAIL ---
+            const subject = 'Your FCTOZ Submission has been Received';
+            const emailData = {
+                subject: subject,
+                userName: req.user.fullName,
+                transactionId: result.insertedId.toString().slice(-6).toUpperCase(),
+                planName: plan.name,
+                amount: plan.price
+            };
+            await sendEmail(req.user.email, subject, 'submission-received', emailData);
+
             req.session.success = { msg: "Your payment proof has been submitted successfully and is under review." };
             res.redirect('/challenges');
         } catch (error) {

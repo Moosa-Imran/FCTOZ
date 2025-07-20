@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="en" class="light">
 <head>
-    <%- include('partials/head') %>
+    <%- include('partials/head.ejs') %>
+    <style>
+        .chat-bubble-user { background-color: #eab308; color: #1e293b; }
+        .chat-bubble-admin { background-color: #e2e8f0; color: #1e293b; }
+        .dark .chat-bubble-admin { background-color: #334155; color: #e2e8f0; }
+    </style>
 </head>
 <body class="bg-slate-50 dark:bg-black text-slate-800 dark:text-slate-200">
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 md:hidden hidden"></div>
     <div class="flex min-h-screen">
-        <%- include('partials/sidebar') %>
+        <%- include('partials/sidebar.ejs') %>
         <div class="flex-1 md:ml-64">
-            <%- include('partials/header') %>
+            <%- include('partials/header.ejs') %>
             <main class="pt-24 px-4 sm:px-6 lg:px-8 pb-8">
                 <!-- Header -->
                 <div class="flex justify-between items-center">
@@ -24,14 +29,18 @@
                     <div class="lg:col-span-1">
                          <div class="p-6 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 card-glow">
                             <h2 class="text-lg font-semibold">Create New Ticket</h2>
-                            <form class="mt-4 space-y-4">
+                            <form action="/tickets/create" method="POST" enctype="multipart/form-data" class="mt-4 space-y-4">
                                 <div>
                                     <label for="ticket-subject" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Subject</label>
-                                    <input type="text" name="ticket-subject" id="ticket-subject" class="w-full mt-1 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-gold-500 focus:ring-gold-500 rounded-lg" placeholder="e.g., KYC Verification">
+                                    <input type="text" name="subject" id="ticket-subject" required class="w-full mt-1 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-gold-500 focus:ring-gold-500 rounded-lg" placeholder="e.g., KYC Verification">
                                 </div>
                                 <div>
                                     <label for="ticket-message" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Message</label>
-                                    <textarea id="ticket-message" name="ticket-message" rows="4" class="w-full mt-1 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-gold-500 focus:ring-gold-500 rounded-lg" placeholder="Describe your issue in detail..."></textarea>
+                                    <textarea id="ticket-message" name="message" rows="4" required class="w-full mt-1 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:border-gold-500 focus:ring-gold-500 rounded-lg" placeholder="Describe your issue in detail..."></textarea>
+                                </div>
+                                <div>
+                                    <label for="ticket-attachment" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Attachment (Optional)</label>
+                                    <input type="file" name="attachment" id="ticket-attachment" class="mt-1 w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold-50 file:text-gold-700 hover:file:bg-gold-100 dark:file:bg-gold-500/20 dark:file:text-gold-300 dark:hover:file:bg-gold-500/30">
                                 </div>
                                 <button type="submit" class="w-full px-5 py-2.5 font-semibold text-white bg-gold-600 hover:bg-gold-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 dark:focus:ring-offset-black button-glow flex items-center justify-center">
                                     <i data-lucide="send" class="h-5 w-5 mr-2"></i> Submit Ticket
@@ -44,119 +53,117 @@
                     <div class="lg:col-span-2">
                         <h2 class="text-lg font-semibold">Your Tickets</h2>
                         <div class="mt-4 space-y-3">
-                            <% tickets.activeTickets.forEach(ticket => { %>
-                                <div class="p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                                    <div>
-                                        <p class="font-semibold"><%= ticket.subject %></p>
-                                        <p class="text-sm text-slate-500 dark:text-slate-400">ID: <%= ticket.id %> &bull; Last Update: <%= ticket.lastUpdate %></p>
+                            <% if (tickets && tickets.length > 0) { %>
+                                <% tickets.forEach(ticket => { %>
+                                    <div class="p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:border-gold-500 transition-colors" onclick="openTicketModal('<%= ticket._id %>')">
+                                        <div>
+                                            <p class="font-semibold"><%= ticket.subject %></p>
+                                            <p class="text-sm text-slate-500 dark:text-slate-400">ID: <%= ticket._id.toString().slice(-6).toUpperCase() %> &bull; Last Update: <%= new Date(ticket.lastReplyAt).toLocaleString() %></p>
+                                        </div>
+                                        <% if (ticket.status === 'open') { %>
+                                            <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-500/20 rounded-full">Active</span>
+                                        <% } else { %>
+                                            <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-700/50 rounded-full">Closed</span>
+                                        <% } %>
                                     </div>
-                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-500/20 rounded-full">Active</span>
-                                </div>
-                            <% }); %>
-                             <% tickets.closedTickets.forEach(ticket => { %>
-                                <div class="p-4 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between opacity-70">
-                                    <div>
-                                        <p class="font-semibold"><%= ticket.subject %></p>
-                                        <p class="text-sm text-slate-500 dark:text-slate-400">ID: <%= ticket.id %> &bull; Last Update: <%= ticket.lastUpdate %></p>
-                                    </div>
-                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-700/50 rounded-full"><%= ticket.status %></span>
-                                </div>
-                            <% }); %>
+                                <% }); %>
+                            <% } else { %>
+                                <p class="text-sm text-slate-500 italic">You have not created any tickets yet.</p>
+                            <% } %>
                         </div>
                     </div>
                 </div>
             </main>
         </div>
     </div>
+
+    <!-- Ticket Details Modal -->
+    <div id="ticket-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl flex flex-col" style="height: 90vh;">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <h2 id="modal-subject" class="text-lg font-bold"></h2>
+                <button id="close-modal" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <div id="modal-messages" class="flex-1 p-4 space-y-4 overflow-y-auto">
+                <!-- Messages will be injected here -->
+            </div>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-700">
+                <form id="reply-form" action="/tickets/reply" method="POST" enctype="multipart/form-data" class="space-y-3">
+                    <input type="hidden" name="ticketId" id="modal-ticket-id">
+                    <textarea name="message" id="reply-message" rows="3" required class="w-full text-sm bg-slate-100 dark:bg-slate-700 rounded-lg p-2" placeholder="Type your reply..."></textarea>
+                    <div class="flex justify-between items-center">
+                        <input type="file" name="attachment" id="reply-attachment" class="text-sm text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold-50 file:text-gold-700 hover:file:bg-gold-100 dark:file:bg-gold-500/20 dark:file:text-gold-300 dark:hover:file:bg-gold-500/30">
+                        <button type="submit" id="reply-submit-btn" class="px-5 py-2 font-semibold text-white bg-gold-600 hover:bg-gold-700 rounded-lg">Send Reply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
   <script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+        
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlEl = document.documentElement;
+        themeToggle.addEventListener('click', () => { htmlEl.classList.toggle('dark'); localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light'); });
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const sidebar = document.querySelector('aside');
+        const sidebarCloseButton = document.getElementById('sidebar-close-button');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+        const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+        mobileMenuButton.addEventListener('click', openSidebar);
+        sidebarCloseButton.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
 
-    // --- Theme Toggler ---
-    const themeToggle = document.getElementById('theme-toggle');
-    const htmlEl = document.documentElement;
-    themeToggle.addEventListener('click', () => {
-      htmlEl.classList.toggle('dark');
-      localStorage.setItem('theme', htmlEl.classList.contains('dark') ? 'dark' : 'light');
-      renderChart(); // Re-render chart with new theme colors
-    });
+        const ticketModal = document.getElementById('ticket-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        
+        window.openTicketModal = async function(ticketId) {
+            const response = await fetch(`/tickets/${ticketId}`);
+            const ticket = await response.json();
+            
+            document.getElementById('modal-subject').textContent = ticket.subject;
+            document.getElementById('modal-ticket-id').value = ticket._id;
+            
+            const messagesContainer = document.getElementById('modal-messages');
+            messagesContainer.innerHTML = '';
+            
+            ticket.messages.forEach(msg => {
+                const isAdmin = msg.sender === 'admin';
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex gap-3 ${isAdmin ? '' : 'justify-end'}`;
+                
+                let imageUrl = '';
+                if (msg.image) {
+                    const baseUrl = isAdmin ? 'http://localhost:3004' : '';
+                    imageUrl = `<a href="${baseUrl}/uploads/${msg.image}" target="_blank"><img src="${baseUrl}/uploads/${msg.image}" class="max-w-xs rounded-lg mt-2"></a>`;
+                }
 
-    // --- Mobile Sidebar ---
-    const mobileMenuButton = document.getElementById('mobile-menu-button');
-    const sidebar = document.querySelector('aside');
-    const sidebarCloseButton = document.getElementById('sidebar-close-button');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
-    const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
-    mobileMenuButton.addEventListener('click', openSidebar);
-    sidebarCloseButton.addEventListener('click', closeSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
-
-    // --- Chart.js Implementation ---
-    let accountGrowthChart;
-    const renderChart = () => {
-      setTimeout(() => {
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        const labelColor = isDarkMode ? '#cbd5e1' : '#475569';
-        const goldColor = '#eab308';
-        const goldColorDark = '#facc15';
-        const tooltipBgColor = isDarkMode ? '#0f172a' : '#fff';
-        const tooltipBorderColor = isDarkMode ? '#334155' : '#e2e8f0';
-
-        const ctx = document.getElementById('accountGrowthChart').getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, isDarkMode ? 'rgba(250, 204, 21, 0.4)' : 'rgba(234, 179, 8, 0.7)');
-        gradient.addColorStop(1, isDarkMode ? 'rgba(250, 204, 21, 0)' : 'rgba(234, 179, 8, 0.1)');
-
-        const chartData = {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-          datasets: [{
-            label: 'Account Value',
-            data: [45000, 48000, 47000, 51000, 55000, 53000, 54329],
-            borderColor: isDarkMode ? goldColorDark : goldColor,
-            backgroundColor: gradient,
-            fill: true, tension: 0.4,
-            pointBackgroundColor: isDarkMode ? goldColorDark : goldColor,
-            pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: isDarkMode ? goldColorDark : goldColor,
-            pointRadius: 4, pointHoverRadius: 6,
-          }]
-        };
-
-        const chartOptions = {
-          responsive: true, maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: false, grid: { color: gridColor, drawBorder: false }, ticks: { color: labelColor, callback: (value) => '$' + value / 1000 + 'k' } },
-            x: { grid: { display: false }, ticks: { color: labelColor } }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: tooltipBgColor, titleColor: isDarkMode ? '#e2e8f0' : '#334155',
-              bodyColor: isDarkMode ? '#cbd5e1' : '#475569', borderColor: tooltipBorderColor,
-              borderWidth: 1, padding: 12, displayColors: false,
-              callbacks: { label: (context) => `Balance: $${context.parsed.y.toLocaleString()}` }
-            },
-            afterDraw: (chart) => {
-              if (isDarkMode) {
-                const ctx = chart.ctx;
-                ctx.save();
-                ctx.shadowColor = 'rgba(250, 204, 21, 0.5)';
-                ctx.shadowBlur = 20;
-                chart.draw();
-                ctx.restore();
-              }
+                messageDiv.innerHTML = `
+                    <div class="max-w-md p-3 rounded-lg ${isAdmin ? 'chat-bubble-admin' : 'chat-bubble-user'}">
+                        <p class="text-sm">${msg.text}</p>
+                        ${imageUrl}
+                        <p class="text-xs mt-1 opacity-70 text-right">${new Date(msg.timestamp).toLocaleString()}</p>
+                    </div>
+                `;
+                messagesContainer.appendChild(messageDiv);
+            });
+            
+            const replyBtn = document.getElementById('reply-submit-btn');
+            if (ticket.status === 'closed') {
+                replyBtn.innerHTML = 'Send and Reopen';
+            } else {
+                replyBtn.innerHTML = 'Send Reply';
             }
-          },
-          interaction: { mode: 'index', intersect: false },
-        };
 
-        if (accountGrowthChart) accountGrowthChart.destroy();
-        accountGrowthChart = new Chart(ctx, { type: 'line', data: chartData, options: chartOptions });
-      }, 50);
-    };
-    window.addEventListener('load', renderChart);
+            ticketModal.classList.remove('hidden');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        closeModalBtn.addEventListener('click', () => ticketModal.classList.add('hidden'));
+    });
   </script>
 </body>
 </html>

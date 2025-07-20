@@ -1,3 +1,4 @@
 /node_modules
 .env
 /public/ss
+/public/uploads
