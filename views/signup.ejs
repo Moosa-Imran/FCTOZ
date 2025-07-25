@@ -15,18 +15,10 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        gold: {
-                            400: '#facc15', 500: '#eab308', 600: '#ca8a04',
-                        },
-                        gray: {
-                            950: '#0c0c0f',
-                            900: '#121216',
-                            800: '#1a1a1f'
-                        }
+                        gold: { 400: '#facc15', 500: '#eab308', 600: '#ca8a04' },
+                        gray: { 950: '#0c0c0f', 900: '#121216', 800: '#1a1a1f' }
                     },
                 }
             }
@@ -51,7 +43,7 @@
             </div>
 
             <div class="auth-card border border-slate-800 rounded-2xl p-8 shadow-2xl shadow-black/20">
-                <form action="/auth/signup" method="POST">
+                <form id="signup-form">
                     <div class="space-y-6">
                         <div>
                             <label for="full-name" class="block text-sm font-medium text-slate-300">Full Name</label>
@@ -89,7 +81,7 @@
                         </div>
 
                         <div>
-                            <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-gray-950 bg-gold-500 hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 focus:ring-offset-gray-950 transition">
+                            <button type="submit" id="create-account-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-gray-950 bg-gold-500 hover:bg-gold-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-500 focus:ring-offset-gray-950 transition">
                                 Create Account
                             </button>
                         </div>
@@ -117,19 +109,78 @@
         </div>
     </div>
 
+    <!-- OTP Verification Modal -->
+    <div id="otp-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50 p-4">
+        <div class="auth-card border border-slate-800 rounded-2xl p-8 shadow-2xl shadow-black/20 w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-center text-white">Verify Your Email</h2>
+            <p class="text-center text-sm text-slate-400 mt-2">Enter the 6-digit code sent to your email.</p>
+            <form id="otp-form" class="mt-6">
+                <input id="otp-input" type="text" maxlength="6" required class="w-full bg-gray-900 border border-slate-700 rounded-lg px-4 py-3 text-white text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition">
+                <p id="otp-error" class="text-red-500 text-sm mt-2 text-center h-4"></p>
+                <button type="submit" id="verify-otp-btn" class="mt-4 w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-gray-950 bg-gold-500 hover:bg-gold-600 transition">Verify</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
+            const signupForm = document.getElementById('signup-form');
+            const otpModal = document.getElementById('otp-modal');
+            const otpForm = document.getElementById('otp-form');
+            const otpError = document.getElementById('otp-error');
+            const createAccountBtn = document.getElementById('create-account-btn');
+
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                createAccountBtn.disabled = true;
+                createAccountBtn.textContent = 'Sending...';
+
+                const formData = new FormData(signupForm);
+                const data = Object.fromEntries(formData.entries());
+
+                const response = await fetch('/auth/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    otpModal.classList.remove('hidden');
+                } else {
+                    const result = await response.json();
+                    // Display errors from backend
+                    alert(result.errors.map(e => e.msg).join('\n'));
+                }
+                createAccountBtn.disabled = false;
+                createAccountBtn.textContent = 'Create Account';
+            });
+
+            otpForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                otpError.textContent = '';
+                const otp = document.getElementById('otp-input').value;
+                
+                const response = await fetch('/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ otp })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    window.location.href = result.redirectUrl;
+                } else {
+                    otpError.textContent = result.errors[0].msg;
+                }
+            });
+
+            // Password strength meter logic...
             const passwordInput = document.getElementById('password');
             const strengthText = document.getElementById('strength-text');
-            const strengthBars = [
-                document.getElementById('strength-bar-1'),
-                document.getElementById('strength-bar-2'),
-                document.getElementById('strength-bar-3'),
-                document.getElementById('strength-bar-4'),
-            ];
-
+            const strengthBars = Array.from({length: 4}, (_, i) => document.getElementById(`strength-bar-${i+1}`));
             passwordInput.addEventListener('input', () => {
                 const password = passwordInput.value;
                 let score = 0;
@@ -137,23 +188,14 @@
                 if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
                 if (/[0-9]/.test(password)) score++;
                 if (/[^A-Za-z0-9]/.test(password)) score++;
-
                 const strengthLevels = [
-                    { text: 'Very Weak', color: 'bg-red-500' },
-                    { text: 'Weak', color: 'bg-orange-500' },
-                    { text: 'Moderate', color: 'bg-yellow-500' },
-                    { text: 'Strong', color: 'bg-green-500' },
+                    { text: 'Very Weak', color: 'bg-red-500' }, { text: 'Weak', color: 'bg-orange-500' },
+                    { text: 'Moderate', color: 'bg-yellow-500' }, { text: 'Strong', color: 'bg-green-500' },
                     { text: 'Very Strong', color: 'bg-green-500' }
                 ];
-                
                 strengthText.textContent = password.length > 0 ? `Strength: ${strengthLevels[score].text}` : '';
-
                 strengthBars.forEach((bar, index) => {
-                    if (index < score) {
-                        bar.className = `strength-bar w-1/4 ${strengthLevels[score].color}`;
-                    } else {
-                        bar.className = 'strength-bar w-1/4 bg-slate-700';
-                    }
+                    bar.className = `strength-bar w-1/4 ${index < score ? strengthLevels[score].color : 'bg-slate-700'}`;
                 });
             });
         });

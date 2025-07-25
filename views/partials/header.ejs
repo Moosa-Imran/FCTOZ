@@ -12,10 +12,169 @@
               <i data-lucide="sun" class="h-5 w-5 hidden dark:block"></i>
               <i data-lucide="moon" class="h-5 w-5 block dark:hidden"></i>
             </button>
-            <button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 relative">
-              <i data-lucide="bell" class="h-5 w-5"></i>
-              <span class="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full"></span>
-            </button>
+            
+            <!-- Notification Bell & Tray -->
+            <div class="relative">
+                <button id="notification-bell" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 relative">
+                  <i data-lucide="bell" class="h-5 w-5"></i>
+                  <span id="notification-indicator" class="absolute top-1 right-1 h-3 w-3 flex items-center justify-center bg-red-500 rounded-full text-white text-[8px] hidden"></span>
+                </button>
+
+                <!-- Notification Tray -->
+                <div id="notification-tray" class="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 hidden z-40">
+                    <div class="p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <h3 class="font-semibold text-sm">Notifications</h3>
+                        <button id="mark-all-read-btn" class="text-xs font-semibold text-gold-600 hover:underline">Mark all as read</button>
+                    </div>
+                    <div id="notification-list" class="max-h-96 overflow-y-auto">
+                        <!-- Notifications will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
           </div>
         </div>
       </header>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationTray = document.getElementById('notification-tray');
+            const notificationList = document.getElementById('notification-list');
+            const notificationIndicator = document.getElementById('notification-indicator');
+            const markAllReadBtn = document.getElementById('mark-all-read-btn');
+
+            // --- Time Ago Helper Function ---
+            function timeAgo(date) {
+                const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+                let interval = seconds / 31536000;
+                if (interval > 1) return Math.floor(interval) + " years ago";
+                interval = seconds / 2592000;
+                if (interval > 1) return Math.floor(interval) + " months ago";
+                interval = seconds / 86400;
+                if (interval > 1) return Math.floor(interval) + " days ago";
+                interval = seconds / 3600;
+                if (interval > 1) return Math.floor(interval) + " hours ago";
+                interval = seconds / 60;
+                if (interval > 1) return Math.floor(interval) + " minutes ago";
+                return Math.floor(seconds) + " seconds ago";
+            }
+
+            // --- Icon Helper Function ---
+            function getIconForLink(link) {
+                if (link.includes('/challenges')) {
+                    return 'target';
+                }
+                if (link.includes('/reports')) { // Added this new condition
+                    return 'clipboard-list';
+                }
+                if (link.includes('/kyc')) {
+                    return 'user-check';
+                }
+                return 'bell'; // Default icon
+            }
+
+            // --- Fetch and Render Notifications ---
+            async function fetchNotifications() {
+                try {
+                    const response = await fetch('/notifications');
+                    if (!response.ok) return;
+                    const notifications = await response.json();
+
+                    notifications.sort((a, b) => (a.isRead - b.isRead) || new Date(b.createdAt) - new Date(a.createdAt));
+
+                    notificationList.innerHTML = '';
+                    let unreadCount = 0;
+
+                    if (notifications.length === 0) {
+                        notificationList.innerHTML = '<p class="text-center text-sm text-slate-500 p-4">No new notifications.</p>';
+                        markAllReadBtn.style.display = 'none';
+                    } else {
+                        markAllReadBtn.style.display = 'block';
+                    }
+
+                    notifications.forEach(notif => {
+                        if (!notif.isRead) unreadCount++;
+
+                        const notifElement = document.createElement('a');
+                        notifElement.href = notif.link;
+                        notifElement.dataset.id = notif._id;
+                        notifElement.className = `block p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 notification-item ${!notif.isRead ? 'bg-slate-50 dark:bg-slate-700/30' : ''}`;
+                        
+                        const iconName = getIconForLink(notif.link);
+
+                        notifElement.innerHTML = `
+                            <div class="flex items-start gap-4">
+                                <div class="w-8 h-8 flex-shrink-0 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
+                                    <i data-lucide="${iconName}" class="w-4 h-4 text-slate-500 dark:text-slate-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-sm">${notif.title}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">${notif.description}</p>
+                                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">${timeAgo(notif.createdAt)}</p>
+                                </div>
+                                ${!notif.isRead ? '<div class="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>' : ''}
+                            </div>
+                        `;
+                        notificationList.appendChild(notifElement);
+                    });
+
+                    lucide.createIcons(); // Re-render icons
+
+                    if (unreadCount > 0) {
+                        notificationIndicator.textContent = unreadCount;
+                        notificationIndicator.classList.remove('hidden');
+                    } else {
+                        notificationIndicator.classList.add('hidden');
+                    }
+
+                } catch (error) {
+                    console.error("Failed to fetch notifications:", error);
+                }
+            }
+
+            // --- Mark as Read Logic ---
+            notificationList.addEventListener('click', async (e) => {
+                const item = e.target.closest('.notification-item');
+                if (item) {
+                    e.preventDefault();
+                    const notifId = item.dataset.id;
+                    
+                    try {
+                        await fetch(`/notifications/mark-read/${notifId}`, { method: 'POST' });
+                        window.location.href = item.href;
+                    } catch (error) {
+                        console.error("Failed to mark notification as read:", error);
+                        window.location.href = item.href;
+                    }
+                }
+            });
+            
+            // --- Mark All as Read Logic ---
+            markAllReadBtn.addEventListener('click', async () => {
+                try {
+                    await fetch('/notifications/mark-all-read', { method: 'POST' });
+                    fetchNotifications(); // Refresh the list
+                } catch (error) {
+                    console.error("Failed to mark all as read:", error);
+                }
+            });
+
+            // --- Toggle Tray Visibility ---
+            notificationBell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                notificationTray.classList.toggle('hidden');
+                if (!notificationTray.classList.contains('hidden')) {
+                    fetchNotifications(); // Refresh when opening
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!notificationTray.contains(e.target) && !notificationBell.contains(e.target)) {
+                    notificationTray.classList.add('hidden');
+                }
+            });
+            
+            // --- Initial Fetch on Page Load ---
+            fetchNotifications();
+        });
+      </script>

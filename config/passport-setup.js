@@ -1,5 +1,6 @@
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const generateUniqueId = require('../utils/generateUniqueId');
+const sendEmail = require('../utils/emailService'); // Import email service
 
 // This entire file is now a function that gets exported
 module.exports = (passport, db) => {
@@ -66,10 +67,20 @@ module.exports = (passport, db) => {
                     fullName: profile.displayName,
                     email: googleEmail,
                     password: null, // No password for Google signups initially
+                    verified: false, // New field
+                    kycId: null,     // New field
                     createdAt: new Date()
                 };
                 await usersCollection.insertOne(newUser);
                 console.log(`Created new user via Google: ${googleEmail}`);
+
+                // Send welcome email
+                const subject = "Welcome to FCTOZ!";
+                sendEmail(googleEmail, subject, 'welcome-email', {
+                    subject: subject,
+                    userName: newUser.fullName
+                });
+
                 return done(null, newUser);
 
             } catch (err) {

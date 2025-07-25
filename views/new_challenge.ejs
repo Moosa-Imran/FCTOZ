@@ -143,14 +143,13 @@
                     <div class="lg:col-span-1" id="order-summary-box">
                         <div class="sticky top-24 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
                             <h3 class="text-xl font-bold text-slate-800 dark:text-white">Order Summary</h3>
-                            
                             <div id="summary-empty" class="text-center py-12 text-slate-500">
                                 <i data-lucide="mouse-pointer-square" class="mx-auto h-12 w-12"></i>
                                 <p class="mt-2">Select a plan to continue.</p>
                             </div>
-
                             <div id="summary-details" class="hidden">
                                 <form id="checkout-form" method="GET">
+                                    <input type="hidden" name="couponCode" id="applied-coupon-code">
                                     <div class="mt-6 space-y-4">
                                         <div class="flex justify-between items-center">
                                             <p class="text-slate-500 dark:text-slate-400">Selected Plan:</p>
@@ -161,15 +160,14 @@
                                             <p id="summary-plan-price" class="font-semibold text-slate-700 dark:text-white"></p>
                                         </div>
                                     </div>
-
                                     <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
                                         <label for="discount-code" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Discount Code</label>
                                         <div class="mt-1 flex">
                                             <input type="text" id="discount-code" placeholder="Enter code" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-l-lg px-4 py-2 text-slate-800 dark:text-white focus:ring-1 focus:ring-gold-500 focus:border-gold-500 transition">
-                                            <button type="button" class="px-4 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-r-lg hover:bg-slate-300 dark:hover:bg-slate-600 font-semibold text-sm">Apply</button>
+                                            <button type="button" id="apply-coupon-btn" class="px-4 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-r-lg hover:bg-slate-300 dark:hover:bg-slate-600 font-semibold text-sm">Apply</button>
                                         </div>
+                                        <p id="coupon-message" class="text-xs mt-2"></p>
                                     </div>
-
                                     <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
                                         <div class="flex justify-between items-center text-lg">
                                             <p class="text-slate-600 dark:text-slate-300 font-semibold">Total:</p>
@@ -188,11 +186,9 @@
             </main>
         </div>
     </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-
             const challengeCards = document.querySelectorAll('.challenge-card');
             const summaryEmpty = document.getElementById('summary-empty');
             const summaryDetails = document.getElementById('summary-details');
@@ -201,6 +197,10 @@
             const summaryTotal = document.getElementById('summary-total');
             const summaryBox = document.getElementById('order-summary-box');
             const checkoutForm = document.getElementById('checkout-form');
+            const applyCouponBtn = document.getElementById('apply-coupon-btn');
+            const discountCodeInput = document.getElementById('discount-code');
+            const couponMessage = document.getElementById('coupon-message');
+            const appliedCouponInput = document.getElementById('applied-coupon-code');
 
             function selectPlan(card) {
                 if (!card) return;
@@ -216,11 +216,14 @@
                 summaryPlanPrice.textContent = `$${planPrice.toFixed(2)}`;
                 summaryTotal.textContent = `$${planPrice.toFixed(2)}`;
                 
-                // Set the form action dynamically
                 checkoutForm.action = `/checkout/${planId}`;
-
                 summaryEmpty.classList.add('hidden');
                 summaryDetails.classList.remove('hidden');
+                
+                // Reset coupon on plan change
+                discountCodeInput.value = '';
+                appliedCouponInput.value = '';
+                couponMessage.textContent = '';
 
                 if (window.innerWidth < 1024) {
                     if (summaryBox) {
@@ -230,17 +233,47 @@
             }
 
             challengeCards.forEach(card => {
-                card.addEventListener('click', () => {
-                    selectPlan(card);
-                });
+                card.addEventListener('click', () => selectPlan(card));
             });
 
-            // Sidebar and Theme toggler logic
+            applyCouponBtn.addEventListener('click', async () => {
+                const code = discountCodeInput.value;
+                const selectedPlanCard = document.querySelector('.challenge-card.selected');
+                if (!code || !selectedPlanCard) {
+                    couponMessage.textContent = 'Please select a plan and enter a code.';
+                    couponMessage.className = 'text-xs mt-2 text-red-500';
+                    return;
+                }
+                const planPrice = parseFloat(selectedPlanCard.dataset.planPrice);
+
+                const response = await fetch('/coupons/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, planPrice })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    const discount = (planPrice * data.discountPercentage) / 100;
+                    const newTotal = planPrice - discount;
+                    summaryTotal.textContent = `$${newTotal.toFixed(2)}`;
+                    couponMessage.textContent = `Success! ${data.discountPercentage}% discount applied.`;
+                    couponMessage.className = 'text-xs mt-2 text-green-500';
+                    appliedCouponInput.value = data.code;
+                    checkoutForm.action = `/checkout/${selectedPlanCard.dataset.planId}?couponCode=${data.code}`;
+                } else {
+                    couponMessage.textContent = data.message;
+                    couponMessage.className = 'text-xs mt-2 text-red-500';
+                    summaryTotal.textContent = `$${planPrice.toFixed(2)}`;
+                    appliedCouponInput.value = '';
+                    checkoutForm.action = `/checkout/${selectedPlanCard.dataset.planId}`;
+                }
+            });
+
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const sidebar = document.querySelector('aside');
             const sidebarCloseButton = document.getElementById('sidebar-close-button');
             const sidebarOverlay = document.getElementById('sidebar-overlay');
-            
             if (mobileMenuButton && sidebar && sidebarCloseButton && sidebarOverlay) {
                 const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
                 const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
@@ -248,7 +281,6 @@
                 sidebarCloseButton.addEventListener('click', closeSidebar);
                 sidebarOverlay.addEventListener('click', closeSidebar);
             }
-
             const themeToggle = document.getElementById('theme-toggle');
             if(themeToggle) {
                 const htmlEl = document.documentElement;

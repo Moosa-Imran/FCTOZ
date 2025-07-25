@@ -39,8 +39,15 @@
                                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=YOUR_USDT_TRC20_WALLET_ADDRESS_HERE" alt="USDT TRC20 Wallet QR Code" class="rounded-lg bg-white p-1">
                                     </div>
                                     <div class="w-full">
-                                        <p class="text-sm text-slate-500">Amount to send:</p>
-                                        <p class="text-2xl font-bold text-gold-500">$<%= plan.price.toFixed(2) %></p>
+                                        <% if (appliedCoupon) { %>
+                                            <p class="text-sm text-slate-500">Original Amount:</p>
+                                            <p class="text-lg font-bold text-slate-500 line-through">$<%= plan.price.toFixed(2) %></p>
+                                            <p class="text-sm text-slate-500 mt-2">Amount to send (with <%= appliedCoupon.discountPercentage %>% discount):</p>
+                                            <p class="text-2xl font-bold text-gold-500">$<%= finalPrice.toFixed(2) %></p>
+                                        <% } else { %>
+                                            <p class="text-sm text-slate-500">Amount to send:</p>
+                                            <p class="text-2xl font-bold text-gold-500">$<%= plan.price.toFixed(2) %></p>
+                                        <% } %>
                                         <p class="text-sm text-slate-500 mt-4">USDT (TRC20) Wallet Address:</p>
                                         <div class="relative mt-1">
                                             <input id="wallet-address" type="text" readonly value="YOUR_USDT_TRC20_WALLET_ADDRESS_HERE" class="w-full bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-4 pr-12 py-2 font-mono text-sm">
@@ -57,7 +64,7 @@
                                 <ul class="mt-2 space-y-2 text-sm text-slate-500 list-disc list-inside">
                                     <li>Ensure you are sending USDT on the <strong class="text-slate-700 dark:text-slate-300">TRC20 (Tron)</strong> network.</li>
                                     <li>Sending any other currency or on a different network will result in the loss of funds.</li>
-                                    <li>Include the transaction fees in your transfer. The amount we receive must be exactly <strong class="text-slate-700 dark:text-slate-300">$<%= plan.price.toFixed(2) %></strong>.</li>
+                                    <li>Include the transaction fees in your transfer. The amount we receive must be exactly <strong class="text-slate-700 dark:text-slate-300">$<%= finalPrice.toFixed(2) %></strong>.</li>
                                     <li>Your account will be activated after we confirm the transaction, typically within 1-2 hours.</li>
                                 </ul>
                             </div>
@@ -72,6 +79,7 @@
                             
                             <form action="/checkout/submit" method="POST" enctype="multipart/form-data" class="mt-6 space-y-6">
                                 <input type="hidden" name="planId" value="<%= plan._id %>">
+                                <input type="hidden" name="couponCode" value="<%= appliedCoupon ? appliedCoupon.code : '' %>">
                                 <div>
                                     <label for="transactionHash" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Hash (TxID)</label>
                                     <input type="text" id="transactionHash" name="transactionHash" required class="mt-1 w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-1 focus:ring-gold-500 focus:border-gold-500 transition" placeholder="e.g., 0x...">
@@ -102,7 +110,6 @@
                 walletAddressInput.select();
                 document.execCommand('copy');
                 
-                // Visual feedback
                 const originalIcon = copyBtn.innerHTML;
                 copyBtn.innerHTML = '<i data-lucide="check" class="h-5 w-5 text-green-500"></i>';
                 lucide.createIcons();
@@ -112,7 +119,6 @@
                 }, 2000);
             });
 
-            // Sidebar and Theme toggler logic
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const sidebar = document.querySelector('aside');
             const sidebarCloseButton = document.getElementById('sidebar-close-button');

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
 const isAuthenticated = require('../middleware/isAuthenticated');
-const sendEmail = require('../utils/emailService'); // Import the email service
+const sendEmail = require('../utils/emailService');
 
 // Route for the dashboard page
 router.get('/dashboard', isAuthenticated, (req, res) => {
@@ -105,7 +105,7 @@ router.post('/challenges/submit-credentials', isAuthenticated, async (req, res) 
     }
 
     try {
-        await db.collection('transactions').updateOne(
+        const updateResult = await db.collection('transactions').updateOne(
             { _id: new ObjectId(transactionId), userId: userId },
             {
                 $set: {
@@ -116,6 +116,34 @@ router.post('/challenges/submit-credentials', isAuthenticated, async (req, res) 
                 }
             }
         );
+
+        if (updateResult.modifiedCount > 0) {
+            const transaction = await db.collection('transactions').findOne({ _id: new ObjectId(transactionId) });
+            const user = await db.collection('users').findOne({ userId: userId });
+
+            if (transaction && user) {
+                // Create Notification
+                const newNotification = {
+                    userId: userId,
+                    title: 'Credentials Submitted',
+                    description: `Your TradingView credentials for the ${transaction.planName} challenge are now under review.`,
+                    link: '/challenges',
+                    isRead: false,
+                    createdAt: new Date()
+                };
+                await db.collection('notifications').insertOne(newNotification);
+
+                // Send Email
+                const subject = "Your FCTOZ Credentials Have Been Received";
+                const emailData = {
+                    subject: subject,
+                    userName: user.fullName,
+                    planName: transaction.planName
+                };
+                sendEmail(user.email, subject, 'credential-submission', emailData);
+            }
+        }
+
         res.redirect('/challenges');
     } catch (error) {
         console.error("Error submitting credentials:", error);
@@ -205,6 +233,28 @@ router.post('/reports/submit', isAuthenticated, (req, res) => {
             const newReport = { userId, challengeId: new ObjectId(challengeId), reportType, pnlAmount: amount, notes, screenshotFile: req.file.filename, status: 'pending', createdAt: new Date() };
             await db.collection('reports').insertOne(newReport);
             await db.collection('challenges').updateOne({ _id: new ObjectId(challengeId) }, { $set: { lastUserUpdate: new Date() } });
+            
+            // Create Notification
+            const newNotification = {
+                userId: userId,
+                title: 'P&L Report Submitted',
+                description: `Your report for challenge ${challenge.challengeId} is now under review.`,
+                link: '/reports',
+                isRead: false,
+                createdAt: new Date()
+            };
+            await db.collection('notifications').insertOne(newNotification);
+
+            // Send Email
+            const subject = "Your FCTOZ P&L Report has been Submitted";
+            const emailData = {
+                subject: subject,
+                userName: req.user.fullName,
+                challengeId: challenge.challengeId,
+                pnlAmount: amount
+            };
+            sendEmail(req.user.email, subject, 'report-submission', emailData);
+
             req.session.success = { msg: "Your P&L report has been submitted successfully." };
             res.redirect('/reports');
         } catch (error) {
@@ -283,15 +333,55 @@ router.get('/new-challenge', isAuthenticated, async (req, res) => {
     }
 });
 
+// POST /coupons/verify - API-like route to verify a coupon
+router.post('/coupons/verify', isAuthenticated, async (req, res) => {
+    const { code, planPrice } = req.body;
+    const db = req.app.locals.db;
+    try {
+        const coupon = await db.collection('coupons').findOne({ code: code.toUpperCase(), isActive: true });
+        if (!coupon) {
+            return res.status(404).json({ message: 'Invalid coupon code.' });
+        }
+        if (planPrice < coupon.minAmount) {
+            return res.status(400).json({ message: `This coupon requires a minimum purchase of $${coupon.minAmount}.` });
+        }
+        res.json(coupon);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
 // GET route to display the checkout page
 router.get('/checkout/:planId', isAuthenticated, async (req, res) => {
+    const { couponCode } = req.query;
+    const db = req.app.locals.db;
+    const planId = req.params.planId;
+
     try {
-        const db = req.app.locals.db;
-        const planId = req.params.planId;
         if (!ObjectId.isValid(planId)) { return res.status(400).send('Invalid Plan ID'); }
         const plan = await db.collection('plans').findOne({ _id: new ObjectId(planId) });
         if (!plan) { return res.status(404).send('Plan not found'); }
-        res.render('checkout', { title: 'Checkout - FCTOZ', plan: plan });
+
+        let finalPrice = plan.price;
+        let discountAmount = 0;
+        let appliedCoupon = null;
+
+        if (couponCode) {
+            const coupon = await db.collection('coupons').findOne({ code: couponCode.toUpperCase(), isActive: true });
+            if (coupon && plan.price >= coupon.minAmount) {
+                discountAmount = (plan.price * coupon.discountPercentage) / 100;
+                finalPrice = plan.price - discountAmount;
+                appliedCoupon = coupon;
+            }
+        }
+
+        res.render('checkout', { 
+            title: 'Checkout - FCTOZ', 
+            plan: plan,
+            finalPrice,
+            discountAmount,
+            appliedCoupon
+        });
     } catch (error) {
         console.error("Error fetching plan for checkout:", error);
         res.status(500).send("Internal Server Error");
@@ -303,26 +393,64 @@ router.post('/checkout/submit', isAuthenticated, (req, res) => {
     const upload = req.app.locals.upload;
     upload.single('ss')(req, res, async function (err) {
         if (err) { console.error("File upload error:", err); return res.redirect('back'); }
-        const { transactionHash, planId } = req.body;
+        const { transactionHash, planId, couponCode } = req.body;
         const db = req.app.locals.db;
         try {
             if (!ObjectId.isValid(planId)) { return res.status(400).send('Invalid Plan ID'); }
             const plan = await db.collection('plans').findOne({ _id: new ObjectId(planId) });
             if (!plan) { return res.status(404).send('Plan not found'); }
-            const newTransaction = { userId: req.user.userId, planId: new ObjectId(planId), planName: plan.name, planAmount: plan.price, transactionHash: transactionHash, ss: req.file ? req.file.filename : null, status: 'pending', createdAt: new Date() };
+
+            let finalAmount = plan.price;
+            let discountDetails = {};
+
+            if (couponCode) {
+                const coupon = await db.collection('coupons').findOne({ code: couponCode.toUpperCase(), isActive: true });
+                if (coupon && plan.price >= coupon.minAmount) {
+                    const discountAmount = (plan.price * coupon.discountPercentage) / 100;
+                    finalAmount = plan.price - discountAmount;
+                    discountDetails = {
+                        couponCode: coupon.code,
+                        discountPercentage: coupon.discountPercentage,
+                        discountAmount: discountAmount
+                    };
+                }
+            }
+
+            const newTransaction = { 
+                userId: req.user.userId, 
+                planId: new ObjectId(planId), 
+                planName: plan.name, 
+                originalAmount: plan.price,
+                finalAmount: finalAmount,
+                ...discountDetails,
+                transactionHash: transactionHash, 
+                ss: req.file ? req.file.filename : null, 
+                status: 'pending', 
+                createdAt: new Date() 
+            };
             
             const result = await db.collection('transactions').insertOne(newTransaction);
             
-            // --- SEND CONFIRMATION EMAIL ---
+            // Create Notification
+            const newNotification = {
+                userId: req.user.userId,
+                title: 'Payment Submitted',
+                description: `Your payment proof for the ${plan.name} challenge is under review.`,
+                link: '/challenges',
+                isRead: false,
+                createdAt: new Date()
+            };
+            await db.collection('notifications').insertOne(newNotification);
+
             const subject = 'Your FCTOZ Submission has been Received';
             const emailData = {
                 subject: subject,
                 userName: req.user.fullName,
                 transactionId: result.insertedId.toString().slice(-6).toUpperCase(),
                 planName: plan.name,
-                amount: plan.price
+                amount: finalAmount
             };
-            await sendEmail(req.user.email, subject, 'submission-received', emailData);
+            sendEmail(req.user.email, subject, 'submission-received', emailData);
 
             req.session.success = { msg: "Your payment proof has been submitted successfully and is under review." };
             res.redirect('/challenges');
@@ -331,6 +459,54 @@ router.post('/checkout/submit', isAuthenticated, (req, res) => {
             res.status(500).send("Internal Server Error");
         }
     });
+});
+
+// --- NOTIFICATION ROUTES ---
+
+// GET /notifications - Fetch all notifications for the user
+router.get('/notifications', isAuthenticated, async (req, res) => {
+    const db = req.app.locals.db;
+    try {
+        const notifications = await db.collection('notifications')
+            .find({ userId: req.user.userId })
+            .sort({ createdAt: -1 })
+            .toArray();
+        res.json(notifications);
+    } catch (error) {
+        console.error("Error fetching notifications:", error);
+        res.status(500).json({ message: "Error fetching notifications" });
+    }
+});
+
+// POST /notifications/mark-read/:id - Mark a notification as read
+router.post('/notifications/mark-read/:id', isAuthenticated, async (req, res) => {
+    const db = req.app.locals.db;
+    const { id } = req.params;
+    try {
+        await db.collection('notifications').updateOne(
+            { _id: new ObjectId(id), userId: req.user.userId },
+            { $set: { isRead: true, readAt: new Date() } }
+        );
+        res.status(200).json({ message: "Notification marked as read." });
+    } catch (error) {
+        console.error("Error marking notification as read:", error);
+        res.status(500).json({ message: "Error updating notification" });
+    }
+});
+
+// POST /notifications/mark-all-read - Mark all notifications as read
+router.post('/notifications/mark-all-read', isAuthenticated, async (req, res) => {
+    const db = req.app.locals.db;
+    try {
+        await db.collection('notifications').updateMany(
+            { userId: req.user.userId, isRead: false },
+            { $set: { isRead: true, readAt: new Date() } }
+        );
+        res.status(200).json({ message: "All notifications marked as read." });
+    } catch (error) {
+        console.error("Error marking all notifications as read:", error);
+        res.status(500).json({ message: "Error updating notifications" });
+    }
 });
 
 module.exports = router;

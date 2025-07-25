@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const generateUniqueId = require('../utils/generateUniqueId');
+const sendEmail = require('../utils/emailService');
 
 // --- Helper Functions ---
 
@@ -29,6 +30,10 @@ function checkPasswordStrength(password) {
 
 // GET /auth/login
 router.get('/login', (req, res) => {
+    // If user is already logged in, redirect to the dashboard
+    if (req.isAuthenticated()) {
+        return res.redirect('/dashboard');
+    }
     const errors = req.session.errors || [];
     const success = req.session.success || null;
     delete req.session.errors;
@@ -67,13 +72,17 @@ router.post('/login', async (req, res, next) => {
 
 // GET /auth/signup
 router.get('/signup', (req, res) => {
+    // If user is already logged in, redirect to the dashboard
+    if (req.isAuthenticated()) {
+        return res.redirect('/dashboard');
+    }
     const errors = req.session.errors || [];
     delete req.session.errors;
     res.render('signup', { title: 'Sign Up - FCTOZ', errors });
 });
 
-// POST /auth/signup
-router.post('/signup', async (req, res) => {
+// POST /auth/send-otp - Step 1 of Signup
+router.post('/send-otp', async (req, res) => {
     const { 'full-name': fullName, email, password, confirmPassword } = req.body;
     const db = req.app.locals.db;
     let errors = [];
@@ -82,38 +91,94 @@ router.post('/signup', async (req, res) => {
         errors.push({ msg: 'Passwords do not match.' });
     }
     if (checkPasswordStrength(password) < 3) {
-        errors.push({ msg: 'Password is too weak. Please include uppercase, lowercase, numbers, and symbols.' });
+        errors.push({ msg: 'Password is too weak.' });
     }
 
     try {
         const existingUser = await db.collection('users').findOne({ email: email.toLowerCase() });
         if (existingUser) {
-            errors.push({ msg: 'An account with this email address already exists.' });
+            errors.push({ msg: 'An account with this email already exists.' });
         }
         
         if (errors.length > 0) {
-            req.session.errors = errors;
-            return res.redirect('/auth/signup');
+            return res.status(400).json({ errors });
         }
         
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+        req.session.otpData = {
+            fullName,
+            email: email.toLowerCase(),
+            password,
+            otp,
+            otpExpires
+        };
+
+        const subject = "Your FCTOZ Verification Code";
+        await sendEmail(email.toLowerCase(), subject, 'email-otp', {
+            subject,
+            userName: fullName,
+            otp
+        });
+
+        res.status(200).json({ message: 'OTP sent successfully.' });
+
+    } catch (error) {
+        console.error('Send OTP Error:', error);
+        res.status(500).json({ errors: [{ msg: 'An internal server error occurred.' }] });
+    }
+});
+
+// POST /auth/verify-otp - Step 2 of Signup
+router.post('/verify-otp', async (req, res) => {
+    const { otp } = req.body;
+    const db = req.app.locals.db;
+
+    if (!req.session.otpData) {
+        return res.status(400).json({ errors: [{ msg: 'OTP session expired. Please sign up again.' }] });
+    }
+
+    const { fullName, email, password, otp: sessionOtp, otpExpires } = req.session.otpData;
+
+    if (new Date() > new Date(otpExpires)) {
+        return res.status(400).json({ errors: [{ msg: 'OTP has expired. Please sign up again.' }] });
+    }
+
+    if (otp !== sessionOtp) {
+        return res.status(400).json({ errors: [{ msg: 'Invalid OTP. Please try again.' }] });
+    }
+
+    try {
         const userId = await generateUniqueId(db);
         const newUser = {
             userId: userId,
             googleId: null,
             fullName: fullName,
-            email: email.toLowerCase(),
+            email: email,
             password: password,
+            verified: false, // New field
+            kycId: null,     // New field
             createdAt: new Date()
         };
 
         await db.collection('users').insertOne(newUser);
+        
+        // Send welcome email
+        const subject = "Welcome to FCTOZ!";
+        sendEmail(email, subject, 'welcome-email', {
+            subject: subject,
+            userName: fullName
+        });
+        
+        delete req.session.otpData;
+
         req.session.success = { msg: 'Account created successfully! Please log in.' };
-        res.redirect('/auth/login');
+        res.status(200).json({ redirectUrl: '/auth/login' });
 
     } catch (error) {
-        console.error('Signup Error:', error);
-        req.session.errors = [{ msg: 'An internal server error occurred during signup.' }];
-        res.redirect('/auth/signup');
+        console.error('Verify OTP & Signup Error:', error);
+        res.status(500).json({ errors: [{ msg: 'An internal server error occurred during signup.' }] });
     }
 });
 
